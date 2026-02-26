@@ -1,0 +1,20 @@
+{
+  "providers": {
+    "openai": {
+      "endpoint": "https://<your-apim-host>/openai/responses",
+      "subscription_key": "REPLACE_WITH_OPENAI_APIM_SUBSCRIPTION_KEY",
+      "timeout_seconds": 30,
+      "api_version": "2024-10-21"
+    },
+    "claude": {
+      "endpoint": "https://<your-apim-host>/claude/messages",
+      "subscription_key": "REPLACE_WITH_CLAUDE_APIM_SUBSCRIPTION_KEY",
+      "timeout_seconds": 30
+    },
+    "gemini": {
+      "endpoint": "https://<your-apim-host>/gemini/generateContent",
+      "subscription_key": "REPLACE_WITH_GEMINI_APIM_SUBSCRIPTION_KEY",
+      "timeout_seconds": 30
+    }
+  }
+}

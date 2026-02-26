@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Model Router UI</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --text: #15202b;
+      --muted: #5b6773;
+      --line: #d2dbe6;
+      --accent: #1268f3;
+      --err: #c62828;
+      --ok: #1f7a3a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top left, #eaf2ff 0%, #f5f9ff 35%, #eef4ff 100%);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      color: var(--text);
+      padding: 24px;
+    }
+    .card {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 12px 30px rgba(18, 50, 94, 0.08);
+    }
+    h1 { margin: 0 0 14px; }
+    .grid { display: grid; gap: 12px; }
+    label { font-weight: 600; display: block; margin-bottom: 6px; }
+    select, textarea, input[type="file"], button {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      background: #fff;
+    }
+    textarea { min-height: 140px; resize: vertical; }
+    button {
+      border: 0;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+    .hint { color: var(--muted); font-size: 12px; }
+    .status-ok { color: var(--ok); }
+    .status-err { color: var(--err); font-weight: 600; }
+    .pane {
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fafcff;
+    }
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 360px;
+      overflow: auto;
+      font-size: 13px;
+    }
+    .row-2 {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 760px) {
+      .row-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Model Router Playground</h1>
+    <div class="grid">
+      <div class="row-2">
+        <div>
+          <label for="mode">Routing Mode</label>
+          <select id="mode">
+            <option value="auto" selected>auto (file-aware)</option>
+            <option value="manual">manual model selection</option>
+          </select>
+        </div>
+        <div>
+          <label for="manual-model">Manual Model</label>
+          <select id="manual-model" disabled>
+            <option value="reasoning-high">reasoning-high (gpt-5)</option>
+            <option value="cost-fast">cost-fast (gpt-4.1-mini)</option>
+            <option value="long-context">long-context (sonnet-4.5)</option>
+            <option value="multimodal">multimodal (gemini-2.5-flash)</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label for="prompt">Prompt</label>
+        <textarea id="prompt" placeholder="Ask a question about uploaded content, or text only..."></textarea>
+      </div>
+
+      <div>
+        <label for="files">Upload Files</label>
+        <input id="files" type="file" multiple accept="image/*,.pdf,.docx,.xlsx,.pptx">
+        <div class="hint">Supported: images, pdf, docx, xlsx, pptx. Auto mode routes by file type with fallbacks.</div>
+      </div>
+
+      <button id="send-btn" type="button">Send</button>
+      <div id="status" class="hint">Idle.</div>
+    </div>
+
+    <section class="pane">
+      <h3>Output</h3>
+      <pre id="output"></pre>
+    </section>
+    <section class="pane">
+      <h3>Raw Response</h3>
+      <pre id="raw"></pre>
+    </section>
+  </main>
+
+  <script>
+    const modeEl = document.getElementById("mode");
+    const manualModelEl = document.getElementById("manual-model");
+    const filesEl = document.getElementById("files");
+    const promptEl = document.getElementById("prompt");
+    const sendBtn = document.getElementById("send-btn");
+    const statusEl = document.getElementById("status");
+    const outputEl = document.getElementById("output");
+    const rawEl = document.getElementById("raw");
+
+    modeEl.addEventListener("change", () => {
+      manualModelEl.disabled = modeEl.value !== "manual";
+    });
+
+    function setStatus(message, kind = "hint") {
+      statusEl.textContent = message;
+      statusEl.className = kind;
+    }
+
+    async function uploadFiles(files) {
+      if (!files.length) {
+        return [];
+      }
+      const form = new FormData();
+      for (const file of files) {
+        form.append("files", file, file.name);
+      }
+      const res = await fetch("/files/upload", {
+        method: "POST",
+        body: form
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error?.message || "Upload failed");
+      }
+      return (data.files || []).map(item => item.file_id);
+    }
+
+    async function send() {
+      sendBtn.disabled = true;
+      outputEl.textContent = "";
+      rawEl.textContent = "";
+      const mode = modeEl.value;
+      const prompt = promptEl.value || "";
+      const files = Array.from(filesEl.files || []);
+
+      try {
+        setStatus("Uploading files...");
+        const fileIds = await uploadFiles(files);
+
+        setStatus("Routing and generating...");
+        const body = {
+          input: prompt,
+          mode,
+          manual_model: mode === "manual" ? manualModelEl.value : null,
+          file_ids: fileIds,
+          options: {}
+        };
+
+        const res = await fetch("/generate/auto", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data?.error?.message || `HTTP ${res.status}`);
+        }
+
+        setStatus(
+          `Completed. Selected ${data.provider}/${data.model} | candidates: ${(data.route_candidates || []).join(", ")}`,
+          "status-ok"
+        );
+        outputEl.textContent = data.output || "";
+        rawEl.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        setStatus(err?.message || "Request failed", "status-err");
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+
+    sendBtn.addEventListener("click", send);
+  </script>
+</body>
+</html>
