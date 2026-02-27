@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,7 @@ apim_client = APIMClient(settings=settings)
 file_store = FileStore()
 app = FastAPI(title="Centralized Model Router", version="1.1.0")
 UI_FILE = Path(__file__).with_name("ui.html")
+TEXT_CLASSIFIER_MODEL_KEY = "cost-fast"
 
 
 @app.get("/ui", response_class=HTMLResponse)
@@ -126,7 +128,10 @@ async def generate_auto(request: GenerateAutoRequest) -> GenerateAutoResponse:
                 )
             targets = [resolve_model(request.manual_model)]
         else:
-            targets = resolve_auto_candidates(file_kinds)
+            if file_kinds:
+                targets = resolve_auto_candidates(file_kinds)
+            else:
+                targets = await _resolve_text_only_auto_targets(request.input)
 
         route_candidates = [_model_key_for_target(target.provider, target.model) for target in targets]
         errors: list[str] = []
@@ -187,6 +192,74 @@ def _model_key_for_target(provider: str, model: str) -> str:
         if target.provider == provider and target.model == model:
             return key
     return f"{provider}:{model}"
+
+
+async def _resolve_text_only_auto_targets(prompt: str) -> list:
+    default_targets = resolve_auto_candidates([])
+    default_keys = [_model_key_for_target(target.provider, target.model) for target in default_targets]
+
+    try:
+        classifier_target = resolve_model(TEXT_CLASSIFIER_MODEL_KEY)
+        classifier_prompt = (
+            "You are a model router classifier.\n"
+            "Choose exactly one label for the user prompt from this list:\n"
+            "- reasoning-high\n"
+            "- cost-fast\n"
+            "- long-context\n"
+            "- multimodal\n\n"
+            "Routing guidance:\n"
+            "- cost-fast: relatively easy or straightforward text tasks, including normal factual Q&A, simple coding help, summaries, and basic math.\n"
+            "- reasoning-high: complex, multi-step reasoning tasks, difficult proofs, deep analysis, and problems requiring careful logical derivation.\n"
+            "- long-context: tasks that require processing very long input/context windows.\n"
+            "- multimodal: tasks that fundamentally require image- or file-grounded reasoning.\n"
+            "Examples:\n"
+            "- 'What is 1+1?' -> cost-fast\n"
+            "- 'Give me a detailed proof of why sqrt(2) is irrational' -> reasoning-high\n\n"
+            "Return only the chosen label, no explanation.\n\n"
+            f"User prompt:\n{prompt}"
+        )
+        normalized = await apim_client.generate(
+            provider=classifier_target.provider,
+            model=classifier_target.model,
+            prompt=classifier_prompt,
+            options={"temperature": 0},
+        )
+        selected_key = _parse_classifier_key(normalized["output"])
+        if selected_key and selected_key in MODEL_MAP:
+            # Keep classifier pick first, then preserve existing text-only fallback order.
+            ordered_keys = [selected_key] + [key for key in default_keys if key != selected_key]
+            return [resolve_model(key) for key in ordered_keys]
+        logger.warning(
+            "Text classifier returned invalid key '%s'; using default text routing",
+            normalized["output"],
+        )
+        return default_targets
+    except (APIMClientError, ModelMappingError) as exc:
+        logger.warning("Text classifier failed (%s); using default text routing", exc)
+        return default_targets
+
+
+def _parse_classifier_key(raw_output: str) -> str | None:
+    text = raw_output.strip().lower()
+    if text in MODEL_MAP:
+        return text
+
+    try:
+        parsed = json.loads(text)
+        if isinstance(parsed, dict):
+            for key_name in ("model", "model_key", "label"):
+                value = parsed.get(key_name)
+                if isinstance(value, str):
+                    candidate = value.strip().lower()
+                    if candidate in MODEL_MAP:
+                        return candidate
+    except json.JSONDecodeError:
+        pass
+
+    for key in MODEL_MAP:
+        if key in text:
+            return key
+    return None
 
 
 def _build_options_for_target(
