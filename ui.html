@@ -73,13 +73,142 @@
       overflow: auto;
       font-size: 13px;
     }
+    .output-render {
+      font-size: 16px;
+      line-height: 1.55;
+      color: #202a35;
+    }
+    .output-render h1, .output-render h2, .output-render h3 {
+      margin: 16px 0 8px;
+      line-height: 1.25;
+    }
+    .output-render p {
+      margin: 10px 0;
+    }
+    .output-render ul, .output-render ol {
+      margin: 8px 0 12px 22px;
+    }
+    .output-render code {
+      background: #f2f6fc;
+      border: 1px solid #dbe4f1;
+      border-radius: 6px;
+      padding: 1px 5px;
+      font-size: 0.92em;
+    }
+    .output-render pre {
+      background: #f7faff;
+      border: 1px solid #dbe4f1;
+      border-radius: 8px;
+      padding: 10px;
+      max-height: none;
+      overflow: auto;
+    }
+    .routing-table th,
+    .routing-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 10px;
+    }
+    .routing-table th {
+      position: sticky;
+      top: 0;
+      background: #f7f9fc;
+      z-index: 1;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #425466;
+    }
+    .routing-table tbody tr:nth-child(even) { background: #fcfdff; }
+    .routing-table tbody tr:hover { background: #f3f8ff; }
+    .col-model { text-align: left; }
+    .col-num { text-align: right; }
+    .col-final {
+      background: #f5f9ff;
+      font-weight: 700;
+      border-left: 2px solid #5a95f5;
+    }
+    .col-qlc {
+      background: #fbfcf8;
+    }
+    .col-qlc-start {
+      border-left: 2px solid #d2dfbe;
+    }
+    .col-qlc-end {
+      border-right: 2px solid #d2dfbe;
+    }
+    .row-selected {
+      background: #eaf3ff !important;
+      box-shadow: inset 3px 0 0 #2a74ea;
+    }
     .row-2 {
       display: grid;
       gap: 12px;
       grid-template-columns: 1fr 1fr;
     }
+    .row-3 {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    .uploaded-list {
+      margin-top: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+    }
+    .uploaded-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+    }
+    .uploaded-item:last-child {
+      border-bottom: none;
+    }
+    .uploaded-meta {
+      color: var(--muted);
+      font-size: 12px;
+      margin-left: 6px;
+    }
+    .uploaded-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .uploaded-text {
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .uploaded-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      object-fit: cover;
+      border: 1px solid var(--line);
+      background: #f3f7fe;
+      flex-shrink: 0;
+    }
+    .btn-inline {
+      width: auto;
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 600;
+    }
     @media (max-width: 760px) {
       .row-2 { grid-template-columns: 1fr; }
+      .row-3 { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -87,21 +216,34 @@
   <main class="card">
     <h1>Model Router Playground</h1>
     <div class="grid">
-      <div class="row-2">
+      <div class="row-3">
         <div>
           <label for="mode">Routing Mode</label>
           <select id="mode">
-            <option value="auto" selected>auto (file-aware)</option>
+            <option value="auto" selected>auto (scored routing)</option>
             <option value="manual">manual model selection</option>
+          </select>
+        </div>
+        <div>
+          <label for="routing-objective">Auto Objective</label>
+          <select id="routing-objective">
+            <option value="balanced" selected>balanced</option>
+            <option value="quality-first">quality-first</option>
+            <option value="latency-first">latency-first</option>
+            <option value="cost-first">cost-first</option>
           </select>
         </div>
         <div>
           <label for="manual-model">Manual Model</label>
           <select id="manual-model" disabled>
-            <option value="reasoning-high">reasoning-high (gpt-5)</option>
-            <option value="cost-fast">cost-fast (gpt-4.1-mini)</option>
-            <option value="long-context">long-context (claude-sonnet-4-5)</option>
-            <option value="multimodal">multimodal (gemini-2.5-flash)</option>
+            <option value="gpt-5.3-codex">gpt-5.3-codex</option>
+            <option value="gpt-5.2">gpt-5.2</option>
+            <option value="gpt-5-mini">gpt-5-mini</option>
+            <option value="claude-opus-4-6">claude-opus-4-6</option>
+            <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+            <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+            <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
+            <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
           </select>
         </div>
       </div>
@@ -114,7 +256,11 @@
       <div>
         <label for="files">Upload Files</label>
         <input id="files" type="file" multiple accept="image/*,.pdf,.docx,.xlsx,.pptx">
-        <div class="hint">Supported: images, pdf, docx, xlsx, pptx. Auto mode routes by file type with fallbacks.</div>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button id="clear-files-btn" type="button" class="btn-inline">Clear Uploaded</button>
+        </div>
+        <div class="hint">Supported: images, pdf, docx, xlsx, pptx. Auto mode uses scoring-based routing with uploaded context.</div>
+        <div id="uploaded-files" class="uploaded-list"></div>
       </div>
 
       <button id="send-btn" type="button">Send</button>
@@ -123,7 +269,33 @@
 
     <section class="pane">
       <h3>Output</h3>
-      <pre id="output"></pre>
+      <div id="output" class="output-render"></div>
+    </section>
+    <section class="pane">
+      <h3>Routing Scores</h3>
+      <div id="routing-summary" class="hint">No routing details yet.</div>
+      <div style="overflow:auto; margin-top:8px;">
+        <table id="routing-table" class="routing-table" style="width:100%; border-collapse: collapse; font-size: 13px;">
+          <thead>
+            <tr>
+              <th class="col-model">Model</th>
+              <th class="col-num col-final">Final</th>
+              <th class="col-num col-qlc">Latency</th>
+              <th class="col-num col-qlc">Cost</th>
+              <th class="col-num col-qlc col-qlc-start col-qlc-end">Quality</th>
+              <th class="col-num">Language</th>
+              <th class="col-num">Reasoning</th>
+              <th class="col-num">Coding</th>
+              <th class="col-num">Math</th>
+              <th class="col-num">Data</th>
+              <th class="col-num">Image</th>
+            </tr>
+          </thead>
+          <tbody id="routing-table-body"></tbody>
+        </table>
+      </div>
+      <div id="routing-formula" class="output-render" style="margin-top:10px;"></div>
+      <div id="query-requirements" class="output-render" style="margin-top:10px;"></div>
     </section>
     <section class="pane">
       <h3>Raw Response</h3>
@@ -131,18 +303,38 @@
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)'], ['$','$']],
+        displayMath: [['\\[', '\\]'], ['$$','$$']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
   <script>
     const modeEl = document.getElementById("mode");
+    const objectiveEl = document.getElementById("routing-objective");
     const manualModelEl = document.getElementById("manual-model");
     const filesEl = document.getElementById("files");
+    const clearFilesBtn = document.getElementById("clear-files-btn");
+    const uploadedFilesEl = document.getElementById("uploaded-files");
     const promptEl = document.getElementById("prompt");
     const sendBtn = document.getElementById("send-btn");
     const statusEl = document.getElementById("status");
     const outputEl = document.getElementById("output");
+    const routingSummaryEl = document.getElementById("routing-summary");
+    const routingTableBodyEl = document.getElementById("routing-table-body");
+    const routingFormulaEl = document.getElementById("routing-formula");
+    const queryRequirementsEl = document.getElementById("query-requirements");
     const rawEl = document.getElementById("raw");
+    const uploadedFiles = [];
 
     modeEl.addEventListener("change", () => {
       manualModelEl.disabled = modeEl.value !== "manual";
+      objectiveEl.disabled = modeEl.value !== "auto";
     });
 
     function setStatus(message, kind = "hint") {
@@ -150,41 +342,128 @@
       statusEl.className = kind;
     }
 
-    async function uploadFiles(files) {
-      if (!files.length) {
-        return [];
+    function formatBytes(n) {
+      if (!Number.isFinite(n)) return "";
+      if (n < 1024) return `${n} B`;
+      if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+      return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function renderUploadedFiles() {
+      if (!uploadedFiles.length) {
+        uploadedFilesEl.innerHTML = `<div class="uploaded-item"><span class="hint">No uploaded files.</span></div>`;
+        return;
       }
+      uploadedFilesEl.innerHTML = uploadedFiles.map(item => `
+        <div class="uploaded-item">
+          <div class="uploaded-left">
+            ${item.preview_url ? `<img class="uploaded-thumb" src="${item.preview_url}" alt="${item.filename} preview">` : ""}
+            <div class="uploaded-text">
+              <strong>${item.filename}</strong>
+              <span class="uploaded-meta">(${item.kind}, ${formatBytes(item.size_bytes)})</span>
+            </div>
+          </div>
+          <button class="btn-inline" data-remove-file-id="${item.file_id}" type="button">Remove</button>
+        </div>
+      `).join("");
+    }
+
+    async function uploadSelectedFiles() {
+      const selected = Array.from(filesEl.files || []);
+      if (!selected.length) {
+        setStatus("Choose one or more files first.", "hint");
+        return;
+      }
+      setStatus("Uploading selected files...");
       const form = new FormData();
-      for (const file of files) {
+      for (const file of selected) {
         form.append("files", file, file.name);
       }
-      const res = await fetch("/files/upload", {
-        method: "POST",
-        body: form
-      });
+      const res = await fetch("/files/upload", { method: "POST", body: form });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data?.error?.message || "Upload failed");
       }
-      return (data.files || []).map(item => item.file_id);
+      const previewUrlsByName = new Map();
+      for (const file of selected) {
+        if (!file.type.startsWith("image/")) {
+          continue;
+        }
+        const arr = previewUrlsByName.get(file.name) || [];
+        arr.push(URL.createObjectURL(file));
+        previewUrlsByName.set(file.name, arr);
+      }
+      for (const item of (data.files || [])) {
+        let previewUrl = null;
+        if (item.kind === "image") {
+          const candidates = previewUrlsByName.get(item.filename) || [];
+          previewUrl = candidates.shift() || null;
+          previewUrlsByName.set(item.filename, candidates);
+        }
+        if (!uploadedFiles.find(x => x.file_id === item.file_id)) {
+          uploadedFiles.push({ ...item, preview_url: previewUrl });
+        } else if (previewUrl) {
+          URL.revokeObjectURL(previewUrl);
+        }
+      }
+      for (const urls of previewUrlsByName.values()) {
+        for (const url of urls) {
+          URL.revokeObjectURL(url);
+        }
+      }
+      filesEl.value = "";
+      renderUploadedFiles();
+      setStatus(`Uploaded ${data.files?.length || 0} file(s).`, "status-ok");
+    }
+
+    async function removeUploadedFile(fileId) {
+      const res = await fetch(`/files/${fileId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error?.message || "Failed to delete file");
+      }
+      const idx = uploadedFiles.findIndex(item => item.file_id === fileId);
+      if (idx >= 0) {
+        const [removed] = uploadedFiles.splice(idx, 1);
+        if (removed?.preview_url) {
+          URL.revokeObjectURL(removed.preview_url);
+        }
+      }
+      renderUploadedFiles();
+      setStatus(`Removed file ${fileId}.`, "hint");
+    }
+
+    async function clearUploadedFiles() {
+      const ids = uploadedFiles.map(item => item.file_id);
+      for (const id of ids) {
+        try {
+          await removeUploadedFile(id);
+        } catch (_) {
+          // Continue clearing what can be deleted.
+        }
+      }
+      renderUploadedFiles();
+      setStatus("Cleared uploaded files.", "hint");
     }
 
     async function send() {
       sendBtn.disabled = true;
-      outputEl.textContent = "";
+      outputEl.innerHTML = "";
+      routingSummaryEl.textContent = "No routing details yet.";
+      routingTableBodyEl.innerHTML = "";
+      routingFormulaEl.innerHTML = "";
+      queryRequirementsEl.innerHTML = "";
       rawEl.textContent = "";
       const mode = modeEl.value;
       const prompt = promptEl.value || "";
-      const files = Array.from(filesEl.files || []);
+      const fileIds = uploadedFiles.map(item => item.file_id);
 
       try {
-        setStatus("Uploading files...");
-        const fileIds = await uploadFiles(files);
-
         setStatus("Routing and generating...");
         const body = {
           input: prompt,
           mode,
+          routing_objective: objectiveEl.value,
           manual_model: mode === "manual" ? manualModelEl.value : null,
           file_ids: fileIds,
           options: {}
@@ -204,7 +483,8 @@
           `Completed. Selected ${data.provider}/${data.model} | candidates: ${(data.route_candidates || []).join(", ")}`,
           "status-ok"
         );
-        outputEl.textContent = data.output || "";
+        await renderOutput(data.output || "");
+        await renderRoutingDetails(data);
         rawEl.textContent = JSON.stringify(data, null, 2);
       } catch (err) {
         setStatus(err?.message || "Request failed", "status-err");
@@ -214,6 +494,199 @@
     }
 
     sendBtn.addEventListener("click", send);
+    filesEl.addEventListener("change", async () => {
+      try {
+        await uploadSelectedFiles();
+      } catch (err) {
+        setStatus(err?.message || "Upload failed", "status-err");
+      }
+    });
+    clearFilesBtn.addEventListener("click", async () => {
+      try {
+        await clearUploadedFiles();
+      } catch (err) {
+        setStatus(err?.message || "Failed to clear files", "status-err");
+      }
+    });
+    uploadedFilesEl.addEventListener("click", async (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const fileId = target.getAttribute("data-remove-file-id");
+      if (!fileId) return;
+      try {
+        await removeUploadedFile(fileId);
+      } catch (err) {
+        setStatus(err?.message || "Failed to remove file", "status-err");
+      }
+    });
+    renderUploadedFiles();
+
+    async function renderOutput(text) {
+      await renderRichText(outputEl, text);
+    }
+
+    async function renderRichText(el, text) {
+      if (!text) {
+        el.innerHTML = "";
+        return;
+      }
+      if (window.marked?.parse) {
+        el.innerHTML = window.marked.parse(text);
+      } else {
+        el.textContent = text;
+      }
+      if (window.MathJax?.typesetPromise) {
+        try {
+          await window.MathJax.typesetPromise([el]);
+        } catch (_) {
+          // Keep already-rendered markdown if math rendering fails.
+        }
+      }
+    }
+
+    function fmtNum(value) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) {
+        return "-";
+      }
+      return Number(value).toFixed(3);
+    }
+
+    function modelKeyFromResponse(data) {
+      const routeCandidates = data.route_candidates || [];
+      for (const key of routeCandidates) {
+        if (key === data.model) {
+          return key;
+        }
+      }
+      return data.model;
+    }
+
+    async function renderRoutingDetails(data) {
+      const scores = data.routing_scores || [];
+      if (!scores.length) {
+        routingSummaryEl.textContent = "No routing score details returned.";
+        return;
+      }
+
+      const selectedModelKey = modelKeyFromResponse(data);
+      routingSummaryEl.textContent = `Objective: ${data.routing_objective || "n/a"} | Selected: ${selectedModelKey}`;
+
+      routingTableBodyEl.innerHTML = "";
+      for (const row of scores) {
+        const isSelected = row.model_key === selectedModelKey;
+        const tr = document.createElement("tr");
+        if (isSelected) tr.classList.add("row-selected");
+        tr.innerHTML = `
+          <td class="col-model">${row.model_key}${isSelected ? " (selected)" : ""}</td>
+          <td class="col-num col-final">${fmtNum(row.final_score)}</td>
+          <td class="col-num col-qlc">${fmtNum(row.latency_score)}</td>
+          <td class="col-num col-qlc">${fmtNum(row.cost_score)}</td>
+          <td class="col-num col-qlc col-qlc-start col-qlc-end">${fmtNum(row.quality_score)}</td>
+          <td class="col-num">${fmtNum(row?.ratings_used?.language)}</td>
+          <td class="col-num">${fmtNum(row?.ratings_used?.reasoning)}</td>
+          <td class="col-num">${fmtNum(row?.ratings_used?.coding)}</td>
+          <td class="col-num">${fmtNum(row?.ratings_used?.mathematics)}</td>
+          <td class="col-num">${fmtNum(row?.ratings_used?.data_analysis)}</td>
+          <td class="col-num">${fmtNum(row?.ratings_used?.image)}</td>
+        `;
+        routingTableBodyEl.appendChild(tr);
+      }
+
+      const selected = scores.find(item => item.model_key === selectedModelKey) || scores[0];
+      const w = data.objective_weights || {};
+      const req = data.query_requirements || {};
+      const ratings = selected.ratings_used || {};
+      const imageAlpha = data.image_alpha;
+
+      const reqVector = [
+        fmtNum(req.language),
+        fmtNum(req.reasoning),
+        fmtNum(req.coding),
+        fmtNum(req.mathematics),
+        fmtNum(req.data_analysis)
+      ];
+      const perfVector = [
+        fmtNum(ratings.language),
+        fmtNum(ratings.reasoning),
+        fmtNum(ratings.coding),
+        fmtNum(ratings.mathematics),
+        fmtNum(ratings.data_analysis)
+      ];
+      const taskFitExpr =
+        `${fmtNum(req.language)} * ${fmtNum(ratings.language)} + ` +
+        `${fmtNum(req.reasoning)} * ${fmtNum(ratings.reasoning)} + ` +
+        `${fmtNum(req.coding)} * ${fmtNum(ratings.coding)} + ` +
+        `${fmtNum(req.mathematics)} * ${fmtNum(ratings.mathematics)} + ` +
+        `${fmtNum(req.data_analysis)} * ${fmtNum(ratings.data_analysis)}`;
+
+      const qualityLines = [
+        "quality calculation:",
+        "q_req = [language, reasoning, coding, mathematics, data_analysis]  # query importance vector (from gpt-5-mini)",
+        `q_req = [${reqVector.join(", ")}]`,
+        "m_perf = [language, reasoning, coding, mathematics, data_analysis]  # selected model performance vector (from ratings)",
+        `m_perf = [${perfVector.join(", ")}]`,
+        "",
+        "task_fit = q_req · m_perf",
+        `task_fit = ${taskFitExpr}`,
+        `task_fit = ${fmtNum(selected.task_fit_score)}`
+      ];
+
+      if (imageAlpha !== null && imageAlpha !== undefined) {
+        qualityLines.push(
+          "",
+          "quality = (1 - alpha) * task_fit + alpha * image  # image-aware blend",
+          `alpha = ${fmtNum(imageAlpha)}`,
+          `image = ${fmtNum(ratings.image)}`,
+          `quality = (1 - ${fmtNum(imageAlpha)}) * ${fmtNum(selected.task_fit_score)} + ${fmtNum(imageAlpha)} * ${fmtNum(ratings.image)}`,
+          `quality = ${fmtNum(selected.quality_score)}`
+        );
+      } else {
+        qualityLines.push(
+          "",
+          "quality = task_fit  # no image blend",
+          `quality = ${fmtNum(selected.quality_score)}`
+        );
+      }
+
+      const finalVector = [
+        fmtNum(selected.quality_score),
+        fmtNum(selected.latency_score),
+        fmtNum(selected.cost_score)
+      ];
+      const weightVector = [
+        fmtNum(w.quality),
+        fmtNum(w.latency),
+        fmtNum(w.cost)
+      ];
+
+      const formulaText =
+        `### Formula\n` +
+        `Mode weights:\n` +
+        `- \`w_quality = ${fmtNum(w.quality)}\`\n` +
+        `- \`w_latency = ${fmtNum(w.latency)}\`\n` +
+        `- \`w_cost = ${fmtNum(w.cost)}\`\n\n` +
+        "```text\n" +
+        `${qualityLines.join("\n")}\n\n` +
+        "final calculation:\n" +
+        "w_mode = [w_quality, w_latency, w_cost]  # mode tradeoff weights\n" +
+        `w_mode = [${weightVector.join(", ")}]\n` +
+        "s = [quality, latency, cost]  # selected model score vector\n" +
+        `s = [${finalVector.join(", ")}]\n` +
+        "final = w_mode · s\n" +
+        `final = ${fmtNum(w.quality)} * ${fmtNum(selected.quality_score)} + ${fmtNum(w.latency)} * ${fmtNum(selected.latency_score)} + ${fmtNum(w.cost)} * ${fmtNum(selected.cost_score)}\n` +
+        `final = ${fmtNum(selected.final_score)}\n` +
+        "```";
+      await renderRichText(routingFormulaEl, formulaText);
+
+      const queryText =
+        `### Query Requirements (from gpt-5-mini)\n` +
+        `- language: **${fmtNum(req.language)}**\n` +
+        `- reasoning: **${fmtNum(req.reasoning)}**\n` +
+        `- coding: **${fmtNum(req.coding)}**\n` +
+        `- mathematics: **${fmtNum(req.mathematics)}**\n` +
+        `- data_analysis: **${fmtNum(req.data_analysis)}**`;
+      await renderRichText(queryRequirementsEl, queryText);
+    }
   </script>
 </body>
 </html>

@@ -20,7 +20,15 @@ from models import (
     GenerateRequest,
     GenerateResponse,
 )
-from router_logic import MODEL_MAP, ModelMappingError, resolve_auto_candidates, resolve_model
+from router_logic import (
+    DEFAULT_QUERY_REQUIREMENTS,
+    IMAGE_ALPHA,
+    MODEL_MAP,
+    OBJECTIVE_WEIGHTS,
+    ModelMappingError,
+    score_auto_candidates,
+    resolve_model,
+)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -33,7 +41,8 @@ apim_client = APIMClient(settings=settings)
 file_store = FileStore()
 app = FastAPI(title="Centralized Model Router", version="1.1.0")
 UI_FILE = Path(__file__).with_name("ui.html")
-TEXT_CLASSIFIER_MODEL_KEY = "cost-fast"
+QUERY_SCORER_MODEL_KEY = "gpt-5-mini"
+DEFAULT_ROUTER_OBJECTIVE = "balanced"
 
 
 @app.get("/ui", response_class=HTMLResponse)
@@ -41,6 +50,31 @@ async def ui() -> HTMLResponse:
     if not UI_FILE.exists():
         raise HTTPException(status_code=404, detail="UI file not found")
     return HTMLResponse(UI_FILE.read_text(encoding="utf-8"))
+
+
+@app.get("/", response_class=HTMLResponse)
+async def root() -> HTMLResponse:
+    return HTMLResponse(
+        """
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Model Router</title>
+</head>
+<body style="font-family:Segoe UI,Tahoma,sans-serif;padding:24px;">
+  <h1>Model Router</h1>
+  <p>Quick links:</p>
+  <ul>
+    <li><a href="/ui">Playground UI</a></li>
+    <li><a href="/docs">Swagger Docs</a></li>
+    <li><a href="/redoc">ReDoc</a></li>
+  </ul>
+</body>
+</html>
+        """.strip()
+    )
 
 
 @app.post("/files/upload", response_model=FileUploadResponse)
@@ -81,6 +115,15 @@ async def get_file(file_id: str) -> FileInfoResponse:
     )
 
 
+@app.delete("/files/{file_id}")
+async def delete_file(file_id: str) -> dict[str, str]:
+    try:
+        file_store.delete(file_id)
+    except FilePipelineError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"deleted_file_id": file_id}
+
+
 @app.post("/generate", response_model=GenerateResponse)
 async def generate(request: GenerateRequest) -> GenerateResponse:
     try:
@@ -119,6 +162,7 @@ async def generate_auto(request: GenerateAutoRequest) -> GenerateAutoResponse:
     try:
         files = file_store.get_many(request.file_ids)
         file_kinds = [item.kind for item in files]
+        objective = request.routing_objective or DEFAULT_ROUTER_OBJECTIVE
 
         if request.mode == "manual":
             if not request.manual_model:
@@ -127,11 +171,34 @@ async def generate_auto(request: GenerateAutoRequest) -> GenerateAutoResponse:
                     detail="manual_model is required when mode='manual'",
                 )
             targets = [resolve_model(request.manual_model)]
+            requirements = {}
+            objective_weights = {}
+            routing_scores: list[dict[str, Any]] = []
         else:
-            if file_kinds:
-                targets = resolve_auto_candidates(file_kinds)
-            else:
-                targets = await _resolve_text_only_auto_targets(request.input)
+            requirements = await _infer_query_requirements(request.input, files)
+            objective_weights = OBJECTIVE_WEIGHTS.get(
+                objective, OBJECTIVE_WEIGHTS[DEFAULT_ROUTER_OBJECTIVE]
+            )
+            scored = score_auto_candidates(
+                file_kinds,
+                query_requirements=requirements,
+                has_image=("image" in file_kinds),
+                objective=objective,
+            )
+            targets = [resolve_model(item.model_key) for item in scored]
+            routing_scores = [
+                {
+                    "model_key": item.model_key,
+                    "final_score": round(item.final_score, 4),
+                    "quality_score": round(item.quality_score, 4),
+                    "task_fit_score": round(item.task_fit_score, 4),
+                    "image_score": round(item.image_score, 4) if item.image_score is not None else None,
+                    "latency_score": round(item.latency_score, 4),
+                    "cost_score": round(item.cost_score, 4),
+                    "ratings_used": item.ratings_used,
+                }
+                for item in scored
+            ]
 
         route_candidates = [_model_key_for_target(target.provider, target.model) for target in targets]
         errors: list[str] = []
@@ -158,6 +225,11 @@ async def generate_auto(request: GenerateAutoRequest) -> GenerateAutoResponse:
                     route_mode=request.mode,
                     route_candidates=route_candidates,
                     used_file_ids=request.file_ids,
+                    routing_objective=objective if request.mode == "auto" else None,
+                    query_requirements=requirements,
+                    objective_weights=objective_weights,
+                    image_alpha=IMAGE_ALPHA if ("image" in file_kinds and request.mode == "auto") else None,
+                    routing_scores=routing_scores,
                 )
             except APIMClientError as exc:
                 logger.warning(
@@ -194,72 +266,71 @@ def _model_key_for_target(provider: str, model: str) -> str:
     return f"{provider}:{model}"
 
 
-async def _resolve_text_only_auto_targets(prompt: str) -> list:
-    default_targets = resolve_auto_candidates([])
-    default_keys = [_model_key_for_target(target.provider, target.model) for target in default_targets]
-
+async def _infer_query_requirements(prompt: str, files: list[ProcessedFile]) -> dict[str, float]:
     try:
-        classifier_target = resolve_model(TEXT_CLASSIFIER_MODEL_KEY)
-        classifier_prompt = (
-            "You are a model router classifier.\n"
-            "Choose exactly one label for the user prompt from this list:\n"
-            "- reasoning-high\n"
-            "- cost-fast\n"
-            "- long-context\n"
-            "- multimodal\n\n"
-            "Routing guidance:\n"
-            "- cost-fast: relatively easy or straightforward text tasks, including normal factual Q&A, simple coding help, summaries, and basic math.\n"
-            "- reasoning-high: complex, multi-step reasoning tasks, difficult proofs, deep analysis, and problems requiring careful logical derivation.\n"
-            "- long-context: tasks that require processing very long input/context windows.\n"
-            "- multimodal: tasks that fundamentally require image- or file-grounded reasoning.\n"
-            "Examples:\n"
-            "- 'What is 1+1?' -> cost-fast\n"
-            "- 'Give me a detailed proof of why sqrt(2) is irrational' -> reasoning-high\n\n"
-            "Return only the chosen label, no explanation.\n\n"
+        scorer_target = resolve_model(QUERY_SCORER_MODEL_KEY)
+        scorer_prompt = (
+            "You are a routing feature scorer.\n"
+            "Score requirements using both the user text and any attached files/images.\n"
+            "Score task requirements across these fields:\n"
+            "- language\n"
+            "- reasoning\n"
+            "- coding\n"
+            "- mathematics\n"
+            "- data_analysis\n\n"
+            "Return JSON only with this exact shape:\n"
+            '{"language":0.0,"reasoning":0.0,"coding":0.0,"mathematics":0.0,"data_analysis":0.0}\n'
+            "Rules:\n"
+            "- Values must be non-negative numbers.\n"
+            "- Values should sum to 1.0.\n"
+            "- No explanation text.\n\n"
             f"User prompt:\n{prompt}"
         )
+        scorer_options = _build_options_for_target(
+            provider=scorer_target.provider,
+            prompt=scorer_prompt,
+            files=files,
+            base_options={},
+        )
         normalized = await apim_client.generate(
-            provider=classifier_target.provider,
-            model=classifier_target.model,
-            prompt=classifier_prompt,
-            options={"temperature": 0},
+            provider=scorer_target.provider,
+            model=scorer_target.model,
+            prompt=scorer_prompt,
+            options=scorer_options,
         )
-        selected_key = _parse_classifier_key(normalized["output"])
-        if selected_key and selected_key in MODEL_MAP:
-            # Keep classifier pick first, then preserve existing text-only fallback order.
-            ordered_keys = [selected_key] + [key for key in default_keys if key != selected_key]
-            return [resolve_model(key) for key in ordered_keys]
-        logger.warning(
-            "Text classifier returned invalid key '%s'; using default text routing",
-            normalized["output"],
-        )
-        return default_targets
+        parsed = _parse_query_requirements(normalized["output"])
+        if parsed:
+            return parsed
+        logger.warning("Query requirement scorer returned invalid output; using defaults")
+        return DEFAULT_QUERY_REQUIREMENTS.copy()
     except (APIMClientError, ModelMappingError) as exc:
-        logger.warning("Text classifier failed (%s); using default text routing", exc)
-        return default_targets
+        logger.warning("Query requirement scoring failed (%s); using defaults", exc)
+        return DEFAULT_QUERY_REQUIREMENTS.copy()
 
 
-def _parse_classifier_key(raw_output: str) -> str | None:
-    text = raw_output.strip().lower()
-    if text in MODEL_MAP:
-        return text
-
+def _parse_query_requirements(raw_output: str) -> dict[str, float] | None:
     try:
-        parsed = json.loads(text)
-        if isinstance(parsed, dict):
-            for key_name in ("model", "model_key", "label"):
-                value = parsed.get(key_name)
-                if isinstance(value, str):
-                    candidate = value.strip().lower()
-                    if candidate in MODEL_MAP:
-                        return candidate
+        parsed = json.loads(raw_output.strip())
     except json.JSONDecodeError:
-        pass
+        return None
 
-    for key in MODEL_MAP:
-        if key in text:
-            return key
-    return None
+    if not isinstance(parsed, dict):
+        return None
+
+    keys = ("language", "reasoning", "coding", "mathematics", "data_analysis")
+    values: dict[str, float] = {}
+    for key in keys:
+        raw = parsed.get(key)
+        try:
+            value = max(0.0, float(raw))
+        except (TypeError, ValueError):
+            return None
+        values[key] = value
+
+    total = sum(values.values())
+    if total <= 0:
+        return None
+    return {key: value / total for key, value in values.items()}
 
 
 def _build_options_for_target(

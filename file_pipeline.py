@@ -77,6 +77,12 @@ class FileStore:
     def get_many(self, file_ids: Iterable[str]) -> list[ProcessedFile]:
         return [self.get(file_id) for file_id in file_ids]
 
+    def delete(self, file_id: str) -> ProcessedFile:
+        item = self._items.pop(file_id, None)
+        if item is None:
+            raise FilePipelineError(f"Unknown file_id '{file_id}'")
+        return item
+
 
 def detect_extension(filename: str) -> str:
     dot = filename.rfind(".")

@@ -14,6 +14,9 @@ class GenerateRequest(BaseModel):
 class GenerateAutoRequest(BaseModel):
     input: str = Field(default="", description="Prompt input text")
     mode: Literal["auto", "manual"] = "auto"
+    routing_objective: Literal[
+        "quality-first", "latency-first", "cost-first", "balanced"
+    ] = "balanced"
     manual_model: str | None = None
     file_ids: list[str] = Field(default_factory=list)
     options: dict[str, Any] = Field(default_factory=dict)
@@ -50,3 +53,8 @@ class GenerateAutoResponse(GenerateResponse):
     route_mode: Literal["auto", "manual"]
     route_candidates: list[str] = Field(default_factory=list)
     used_file_ids: list[str] = Field(default_factory=list)
+    routing_objective: Literal["quality-first", "latency-first", "cost-first", "balanced"] | None = None
+    query_requirements: dict[str, float] = Field(default_factory=dict)
+    objective_weights: dict[str, float] = Field(default_factory=dict)
+    image_alpha: float | None = None
+    routing_scores: list[dict[str, Any]] = Field(default_factory=list)
