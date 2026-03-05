@@ -91,6 +91,8 @@ class APIMClient:
                 "messages": [{"role": "user", "content": prompt}],
             }
             base.update(options)
+            # Anthropic Messages API requires max_tokens for each request.
+            base.setdefault("max_tokens", 1024)
             return base
 
         if provider == "gemini":

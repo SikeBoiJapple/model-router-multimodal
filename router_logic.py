@@ -17,7 +17,7 @@ class ModelTarget:
 MODEL_MAP: dict[str, ModelTarget] = {
     "reasoning-high": ModelTarget(provider="openai", model="gpt-5"),
     "cost-fast": ModelTarget(provider="openai", model="gpt-4.1-mini"),
-    "long-context": ModelTarget(provider="claude", model="sonnet-4.5"),
+    "long-context": ModelTarget(provider="claude", model="claude-sonnet-4-5"),
     "multimodal": ModelTarget(provider="gemini", model="gemini-2.5-flash"),
 }
 
