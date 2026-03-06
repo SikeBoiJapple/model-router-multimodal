@@ -23,6 +23,12 @@ Single generation endpoint for all routing behavior.
 - `mode="manual"`: uses `manual_model`
 - `routing_objective`: `quality-first` | `latency-first` | `cost-first` | `balanced`
 - Supports optional `file_ids` from `/files/upload`
+- Reasoning effort behavior for OpenAI GPT-5 family:
+  - Normal generation requests use `reasoning.effort="low"`
+  - Internal query-requirement scoring (`gpt-5-mini`) uses `reasoning.effort="medium"`
+- Gemini thinking defaults:
+  - `gemini-3.1-pro-preview` uses `generationConfig.thinkingConfig.thinkingLevel="low"`
+  - `gemini-3-flash-preview` uses `generationConfig.thinkingConfig.thinkingLevel="minimal"`
 
 Example request (auto):
 

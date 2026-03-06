@@ -41,6 +41,8 @@ file_store = FileStore()
 app = FastAPI(title="Centralized Model Router", version="1.1.0")
 UI_FILE = Path(__file__).with_name("ui.html")
 QUERY_SCORER_MODEL_KEY = "gpt-5-mini"
+QUERY_SCORER_REASONING_EFFORT = "medium"
+DEFAULT_OPENAI_REASONING_EFFORT = "low"
 DEFAULT_ROUTER_OBJECTIVE = "balanced"
 MODEL_PRICING_USD_PER_MILLION: dict[str, dict[str, float]] = {
     "gpt-5.3-codex": {"input": 1.75, "output": 14.00},
@@ -187,6 +189,17 @@ async def generate(request: GenerateAutoRequest) -> GenerateAutoResponse:
                     files=files,
                     base_options=request.options,
                 )
+                merged_options = _apply_openai_reasoning_effort(
+                    provider=target.provider,
+                    model=target.model,
+                    options=merged_options,
+                    effort=DEFAULT_OPENAI_REASONING_EFFORT,
+                )
+                merged_options = _apply_gemini_thinking_level(
+                    provider=target.provider,
+                    model=target.model,
+                    options=merged_options,
+                )
                 started = perf_counter()
                 normalized = await apim_client.generate(
                     provider=target.provider,
@@ -274,6 +287,17 @@ async def _infer_query_requirements(prompt: str, files: list[ProcessedFile]) -> 
             prompt=scorer_prompt,
             files=files,
             base_options={},
+        )
+        scorer_options = _apply_openai_reasoning_effort(
+            provider=scorer_target.provider,
+            model=scorer_target.model,
+            options=scorer_options,
+            effort=QUERY_SCORER_REASONING_EFFORT,
+        )
+        scorer_options = _apply_gemini_thinking_level(
+            provider=scorer_target.provider,
+            model=scorer_target.model,
+            options=scorer_options,
         )
         normalized = await apim_client.generate(
             provider=scorer_target.provider,
@@ -397,6 +421,61 @@ def _tool_text_block(item: ProcessedFile) -> str:
         f"{snippet}\n"
         "[End Extracted File]"
     )
+
+
+def _apply_openai_reasoning_effort(
+    provider: str,
+    model: str,
+    options: dict[str, Any],
+    effort: str,
+) -> dict[str, Any]:
+    if provider != "openai":
+        return dict(options)
+    if not model.startswith("gpt-5"):
+        return dict(options)
+
+    merged = dict(options)
+    merged["reasoning"] = {"effort": effort}
+    return merged
+
+
+def _apply_gemini_thinking_level(
+    provider: str,
+    model: str,
+    options: dict[str, Any],
+) -> dict[str, Any]:
+    if provider != "gemini":
+        return dict(options)
+
+    model_name = model.lower()
+    level: str | None = None
+    if model_name == "gemini-3.1-pro-preview":
+        level = "low"
+    elif model_name == "gemini-3-flash-preview":
+        level = "minimal"
+
+    if level is None:
+        return dict(options)
+
+    merged = dict(options)
+    generation_config = merged.get("generationConfig")
+    if not isinstance(generation_config, dict):
+        generation_config = {}
+    else:
+        generation_config = dict(generation_config)
+
+    thinking_config = generation_config.get("thinkingConfig")
+    if not isinstance(thinking_config, dict):
+        thinking_config = {}
+    else:
+        thinking_config = dict(thinking_config)
+
+    # Gemini 3 docs: do not mix thinkingLevel with legacy thinkingBudget.
+    thinking_config.pop("thinkingBudget", None)
+    thinking_config["thinkingLevel"] = level
+    generation_config["thinkingConfig"] = thinking_config
+    merged["generationConfig"] = generation_config
+    return merged
 
 
 def _extract_token_usage(provider: str, raw: dict[str, Any]) -> dict[str, int]:
