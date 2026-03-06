@@ -588,7 +588,7 @@
         <section class="pane collapse-pane">
           <details id="output-panel" open>
             <summary>Output</summary>
-            <div class="collapse-body panel-scroll panel-output">
+            <div class="collapse-body">
               <div id="output-metrics"></div>
               <div id="output" class="output-render"></div>
               <div id="compare-output" class="compare-grid hidden">
@@ -684,6 +684,13 @@
   </script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
   <script>
+    if (window.marked?.setOptions) {
+      window.marked.setOptions({
+        gfm: true,
+        breaks: true
+      });
+    }
+
     const modeEl = document.getElementById("mode");
     const objectiveEl = document.getElementById("routing-objective");
     const autoControlsEl = document.getElementById("auto-controls");
@@ -742,8 +749,8 @@
         text: "Fix this Python bug and return code only: if n % 2 = 0",
       },
       {
-        label: "Short proof",
-        text: "Prove in 2-3 lines: sum of two odd numbers is even.",
+        label: "Java quickSort",
+        text: "Write a Java quickSort implementation for an int[] and include a short main method example.",
       },
       {
         label: "CLT rigorous proof",
@@ -1010,7 +1017,7 @@
               const payload = result.value.data;
               compareTitleEls[i].textContent = `${requestedModel} (${payload.provider}/${payload.model})`;
               renderResponseMetrics(compareMetricsEls[i], payload, requestedModel);
-              await renderRichText(compareBodyEls[i], payload.output || "_No output_");
+              await renderRichText(compareBodyEls[i], payload.output || "_No output_", { autoFormat: true });
               rawResults.push({ model: requestedModel, ok: true, response: payload });
             } else {
               compareMetricsEls[i].innerHTML = "";
@@ -1108,18 +1115,126 @@
     applyModeState();
 
     async function renderOutput(text) {
-      await renderRichText(outputEl, text);
+      await renderRichText(outputEl, text, { autoFormat: true });
     }
 
-    async function renderRichText(el, text) {
+    function isLikelyCodeLine(line) {
+      const trimmed = line.trim();
+      if (!trimmed) return false;
+      if (/^(def|class|function|const|let|var|if|elif|else|for|while|try|except|catch|finally|return|import|from|package|public|private|protected|interface|enum)\b/.test(trimmed)) {
+        return true;
+      }
+      if (/^(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|WITH)\b/i.test(trimmed)) {
+        return true;
+      }
+      if (/^(<[^>]+>|[#][!/]|[{[]|[}\]])/.test(trimmed)) {
+        return true;
+      }
+      if (/[{};]/.test(trimmed)) {
+        return true;
+      }
+      if (/=>/.test(trimmed) || /:=/.test(trimmed)) {
+        return true;
+      }
+      if (/^[A-Za-z_][A-Za-z0-9_]*\s*=\s*[^=]+$/.test(trimmed) && /[()[\]{}'"0-9]/.test(trimmed)) {
+        return true;
+      }
+      return false;
+    }
+
+    function autoFenceLikelyCodeBlocks(text) {
+      if (!text || /```/.test(text)) {
+        return text;
+      }
+      const lines = text.split("\n");
+      const out = [];
+      let i = 0;
+      while (i < lines.length) {
+        const startsCode = /^\s{4,}|\t/.test(lines[i]) || isLikelyCodeLine(lines[i]);
+        if (!startsCode) {
+          out.push(lines[i]);
+          i += 1;
+          continue;
+        }
+        let j = i;
+        const block = [];
+        while (j < lines.length) {
+          const line = lines[j];
+          if (!line.trim()) {
+            block.push(line);
+            j += 1;
+            continue;
+          }
+          const codeLike = /^\s{4,}|\t/.test(line) || isLikelyCodeLine(line);
+          if (!codeLike) {
+            break;
+          }
+          block.push(line);
+          j += 1;
+        }
+        const nonEmptyCount = block.filter(x => x.trim()).length;
+        if (nonEmptyCount >= 2) {
+          out.push("```text");
+          out.push(...block.map(x => x.replace(/^\s{4}/, "")));
+          out.push("```");
+        } else {
+          out.push(...block);
+        }
+        i = j;
+      }
+      return out.join("\n");
+    }
+
+    function autoWrapMathExpressions(text) {
+      if (!text) return text;
+      const segments = text.split(/(```[\s\S]*?```)/g);
+      const equationRegex = /([A-Za-z][A-Za-z0-9_]*(?:\([^\n()]*\))?\s*(?::=|=)\s*[A-Za-z0-9_μσφπ∞√+\-*/^()[\]{}\s]+)(?=[,.;]|$)/g;
+      const symbolExprRegex = /\b(E\[[^\]\n]+\]|Var\([^\)\n]+\)|Cov\([^\)\n]+\)|P\([^\)\n]+\)|N\([^\)\n]+\)|[A-Za-z]+_[A-Za-z0-9]+|[A-Za-z0-9_]+\^[A-Za-z0-9_]+)\b/g;
+
+      return segments.map((segment) => {
+        if (segment.startsWith("```")) {
+          return segment;
+        }
+        let s = segment;
+        if (!/\\\(|\\\[|\$\$|\$[^$]/.test(s)) {
+          s = s.replace(equationRegex, (match) => {
+            const clean = match.trim();
+            if (!clean || /\\\(|\\\[|\$/.test(clean)) {
+              return match;
+            }
+            return `\\(${clean}\\)`;
+          });
+          s = s.replace(symbolExprRegex, (match) => {
+            if (/\\\(|\\\[|\$/.test(match)) {
+              return match;
+            }
+            if (/^[A-Za-z]{2,}$/.test(match)) {
+              return match;
+            }
+            return `\\(${match}\\)`;
+          });
+        }
+        return s;
+      }).join("");
+    }
+
+    function preprocessRenderableText(text) {
+      const normalized = String(text || "").replace(/\r\n/g, "\n");
+      const fenced = autoFenceLikelyCodeBlocks(normalized);
+      return autoWrapMathExpressions(fenced);
+    }
+
+    async function renderRichText(el, text, options = {}) {
       if (!text) {
         el.innerHTML = "";
         return;
       }
+      const normalized = String(text || "").replace(/\r\n/g, "\n");
+      const prepared = options.autoFormat ? preprocessRenderableText(normalized) : normalized;
       if (window.marked?.parse) {
-        el.innerHTML = window.marked.parse(text);
+        el.innerHTML = window.marked.parse(prepared);
       } else {
-        el.textContent = text;
+        el.textContent = prepared;
       }
       if (window.MathJax?.typesetPromise) {
         try {

@@ -82,6 +82,6 @@ Routing details:
 
 1. `Write a joke about d/dx e^x = e^x.`
 2. `Fix this Python bug and return code only: if n % 2 = 0`
-3. `Prove in 2–3 lines: sum of two odd numbers is even.`
+3. `Write a Java quickSort implementation for an int[] and include a short main method example.`
 4. `Prove the Central Limit Theorem for i.i.d. variables with finite mean and variance using characteristic functions; give a rigorous step-by-step proof and state every theorem used.`
 5. `Explain the Central Limit Theorem intuitively to a middle school student, without heavy math notation.`
