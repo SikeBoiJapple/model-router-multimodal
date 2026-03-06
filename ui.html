@@ -21,29 +21,86 @@
       background: radial-gradient(circle at top left, #eaf2ff 0%, #f5f9ff 35%, #eef4ff 100%);
       font-family: "Segoe UI", Tahoma, sans-serif;
       color: var(--text);
-      padding: 24px;
+      font-size: 14px;
+      padding: 18px;
     }
     .card {
-      max-width: 980px;
+      max-width: 1680px;
       margin: 0 auto;
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 16px;
-      padding: 18px;
+      padding: 14px;
       box-shadow: 0 12px 30px rgba(18, 50, 94, 0.08);
     }
-    h1 { margin: 0 0 14px; }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.9fr) minmax(0, 2.1fr);
+      gap: 12px;
+      align-items: start;
+    }
+    .left-column,
+    .right-column {
+      min-width: 0;
+    }
+    .left-column {
+      position: sticky;
+      top: 10px;
+      max-height: calc(100vh - 40px);
+      overflow: auto;
+      padding-right: 4px;
+    }
+    .right-column {
+      display: grid;
+      gap: 10px;
+      padding-left: 10px;
+      border-left: 1px solid var(--line);
+    }
+    .right-column .pane {
+      margin-top: 0;
+    }
+    h1 { margin: 0; }
+    .main-title {
+      margin: 2px 0 2px;
+      font-size: 2rem;
+      line-height: 1.1;
+      color: #102a4a;
+    }
     .grid { display: grid; gap: 12px; }
-    label { font-weight: 600; display: block; margin-bottom: 6px; }
+    .composer {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 0;
+    }
+    .form-section {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fbfdff;
+      padding: 12px;
+    }
+    .form-title {
+      margin: 0 0 4px;
+      font-size: 14px;
+      line-height: 1.25;
+      color: #18324e;
+      font-weight: 700;
+    }
+    .form-subtitle {
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    label { font-weight: 600; display: block; margin-bottom: 5px; font-size: 13px; }
     select, textarea, input[type="file"], button {
       width: 100%;
       border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 14px;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
       background: #fff;
     }
-    textarea { min-height: 140px; resize: vertical; }
+    textarea { min-height: 120px; resize: vertical; }
     button {
       border: 0;
       background: var(--accent);
@@ -55,15 +112,61 @@
       opacity: 0.65;
       cursor: not-allowed;
     }
-    .hint { color: var(--muted); font-size: 12px; }
+    .hint { color: var(--muted); font-size: 11px; }
     .status-ok { color: var(--ok); }
     .status-err { color: var(--err); font-weight: 600; }
     .pane {
       margin-top: 12px;
       border: 1px solid var(--line);
-      border-radius: 10px;
+      border-radius: 8px;
       padding: 10px;
       background: #fafcff;
+    }
+    .collapse-pane {
+      padding: 0;
+      overflow: hidden;
+    }
+    .collapse-pane details {
+      display: block;
+    }
+    .collapse-pane summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 10px 12px;
+      font-size: 18px;
+      font-weight: 700;
+      border-bottom: 1px solid var(--line);
+      user-select: none;
+      background: #f8fbff;
+      letter-spacing: 0.02em;
+    }
+    .collapse-pane summary::-webkit-details-marker {
+      display: none;
+    }
+    .collapse-pane summary::before {
+      content: ">";
+      display: inline-block;
+      margin-right: 8px;
+      color: #3f5f86;
+    }
+    .collapse-pane details[open] summary::before {
+      content: "v";
+    }
+    .collapse-pane details[open] summary {
+      border-bottom: 1px solid var(--line);
+    }
+    .collapse-body {
+      padding: 8px;
+    }
+    .panel-scroll {
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+    .panel-output {
+      max-height: 42vh;
+    }
+    .panel-routing {
+      max-height: 46vh;
     }
     pre {
       margin: 0;
@@ -74,8 +177,8 @@
       font-size: 13px;
     }
     .output-render {
-      font-size: 16px;
-      line-height: 1.55;
+      font-size: 14px;
+      line-height: 1.45;
       color: #202a35;
     }
     .output-render h1, .output-render h2, .output-render h3 {
@@ -108,9 +211,9 @@
       border-left: 4px solid #3f7de0;
       border-radius: 8px;
       background: #f4f9ff;
-      padding: 8px 10px;
+      padding: 6px 8px;
       margin: 0 0 10px;
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1.35;
     }
     .response-metrics .title {
@@ -124,7 +227,7 @@
     .routing-table th,
     .routing-table td {
       border-bottom: 1px solid var(--line);
-      padding: 8px 10px;
+      padding: 6px 8px;
     }
     .routing-table th {
       position: sticky;
@@ -161,7 +264,7 @@
     }
     .row-2 {
       display: grid;
-      gap: 12px;
+      gap: 10px;
       grid-template-columns: 1fr 1fr;
     }
     .row-3 {
@@ -171,7 +274,7 @@
     }
     .compare-row {
       display: grid;
-      gap: 12px;
+      gap: 10px;
       grid-template-columns: 1fr 1fr 1fr;
       margin-top: 2px;
     }
@@ -188,16 +291,16 @@
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      padding: 8px 10px;
+      padding: 7px 9px;
       border-bottom: 1px solid var(--line);
-      font-size: 13px;
+      font-size: 12px;
     }
     .uploaded-item:last-child {
       border-bottom: none;
     }
     .uploaded-meta {
       color: var(--muted);
-      font-size: 12px;
+      font-size: 11px;
       margin-left: 6px;
     }
     .uploaded-left {
@@ -223,9 +326,9 @@
     }
     .btn-inline {
       width: auto;
-      padding: 7px 10px;
+      padding: 6px 8px;
       border-radius: 8px;
-      font-size: 12px;
+      font-size: 11px;
       border: 1px solid var(--line);
       background: #fff;
       color: var(--text);
@@ -246,7 +349,7 @@
     }
     .compare-title {
       margin: 0 0 8px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
     }
     .compare-error {
@@ -254,165 +357,320 @@
       font-weight: 600;
       white-space: pre-wrap;
     }
+    .prompt-tools {
+      display: grid;
+      gap: 6px;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .prompt-tools .btn-inline {
+      white-space: nowrap;
+    }
+    .prompt-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+      flex-wrap: wrap;
+    }
+    .prompt-actions .btn-inline {
+      padding: 7px 10px;
+    }
+    .files-summary {
+      color: var(--muted);
+      font-size: 11px;
+      min-width: 180px;
+    }
+    .send-wrap {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .file-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(18, 32, 51, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+    }
+    .file-modal-card {
+      width: min(700px, 100%);
+      max-height: 82vh;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      padding: 12px;
+      box-shadow: 0 18px 40px rgba(10, 25, 46, 0.2);
+    }
+    .file-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .file-modal-header h3 {
+      margin: 0;
+      font-size: 14px;
+      color: #16355a;
+    }
+    .modal-close-btn {
+      width: auto;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #21354d;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    @media (max-width: 1100px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+      .left-column {
+        position: static;
+        max-height: none;
+        overflow: visible;
+        padding-right: 0;
+      }
+      .right-column {
+        padding-left: 0;
+        border-left: none;
+      }
+      .panel-output,
+      .panel-routing {
+        max-height: none;
+      }
+    }
     @media (max-width: 760px) {
       .row-2 { grid-template-columns: 1fr; }
       .row-3 { grid-template-columns: 1fr; }
       .compare-row { grid-template-columns: 1fr; }
       .compare-grid { grid-template-columns: 1fr; }
+      .prompt-tools { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <main class="card">
-    <h1>Model Router Playground</h1>
-    <div class="grid">
-      <div class="row-3">
-        <div>
-          <label for="mode">Routing Mode</label>
-          <select id="mode">
-            <option value="auto" selected>auto (scored routing)</option>
-            <option value="manual">manual model selection</option>
-            <option value="model-comparison">model comparison</option>
-          </select>
-        </div>
-        <div>
-          <label for="routing-objective">Router Objective</label>
-          <select id="routing-objective">
-            <option value="balanced" selected>balanced</option>
-            <option value="quality-first">quality-first</option>
-            <option value="latency-first">latency-first</option>
-            <option value="cost-first">cost-first</option>
-          </select>
-        </div>
-        <div>
-          <label id="manual-model-label" for="manual-model">Query Evaluation</label>
-          <select id="manual-model">
-            <option value="gpt-5.3-codex">gpt-5.3-codex</option>
-            <option value="gpt-5.2">gpt-5.2</option>
-            <option value="gpt-5-mini" selected>gpt-5-mini</option>
-            <option value="claude-opus-4-6">claude-opus-4-6</option>
-            <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
-            <option value="claude-haiku-4-5">claude-haiku-4-5</option>
-            <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
-            <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
-          </select>
-        </div>
-      </div>
-      <div id="compare-row" class="compare-row hidden">
-        <div>
-          <label for="compare-model-1">Model 1</label>
-          <select id="compare-model-1">
-            <option value="gpt-5.3-codex">gpt-5.3-codex</option>
-            <option value="gpt-5.2">gpt-5.2</option>
-            <option value="gpt-5-mini">gpt-5-mini</option>
-            <option value="claude-opus-4-6">claude-opus-4-6</option>
-            <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
-            <option value="claude-haiku-4-5">claude-haiku-4-5</option>
-            <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
-            <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
-          </select>
-        </div>
-        <div>
-          <label for="compare-model-2">Model 2</label>
-          <select id="compare-model-2">
-            <option value="gpt-5.3-codex">gpt-5.3-codex</option>
-            <option value="gpt-5.2" selected>gpt-5.2</option>
-            <option value="gpt-5-mini">gpt-5-mini</option>
-            <option value="claude-opus-4-6">claude-opus-4-6</option>
-            <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
-            <option value="claude-haiku-4-5">claude-haiku-4-5</option>
-            <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
-            <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
-          </select>
-        </div>
-        <div>
-          <label for="compare-model-3">Model 3</label>
-          <select id="compare-model-3">
-            <option value="gpt-5.3-codex">gpt-5.3-codex</option>
-            <option value="gpt-5.2">gpt-5.2</option>
-            <option value="gpt-5-mini" selected>gpt-5-mini</option>
-            <option value="claude-opus-4-6">claude-opus-4-6</option>
-            <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
-            <option value="claude-haiku-4-5">claude-haiku-4-5</option>
-            <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
-            <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
-          </select>
+    <div class="workspace">
+      <div class="left-column">
+        <div class="composer">
+          <section class="form-section">
+            <h2 class="form-title">Routing Setup</h2>
+            <p class="form-subtitle">Choose routing mode and mode-specific model controls.</p>
+            <div class="grid">
+              <div>
+                <label for="mode">Routing Mode</label>
+                <select id="mode">
+                  <option value="auto" selected>auto (scored routing)</option>
+                  <option value="manual">manual model selection</option>
+                  <option value="model-comparison">model comparison</option>
+                </select>
+              </div>
+              <div id="auto-controls" class="row-2">
+                <div>
+                  <label for="routing-objective">Router Objective</label>
+                  <select id="routing-objective">
+                    <option value="balanced" selected>balanced</option>
+                    <option value="quality-first">quality-first</option>
+                    <option value="latency-first">latency-first</option>
+                    <option value="cost-first">cost-first</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="query-evaluator-model">Query Evaluation Engine</label>
+                  <select id="query-evaluator-model">
+                    <option value="gpt-5.3-codex">gpt-5.3-codex</option>
+                    <option value="gpt-5.2">gpt-5.2</option>
+                    <option value="gpt-5-mini" selected>gpt-5-mini</option>
+                    <option value="claude-opus-4-6">claude-opus-4-6</option>
+                    <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+                    <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+                    <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
+                    <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
+                  </select>
+                </div>
+              </div>
+              <div id="manual-controls" class="hidden">
+                <div>
+                  <label for="manual-model">Manual Model</label>
+                  <select id="manual-model">
+                    <option value="gpt-5.3-codex">gpt-5.3-codex</option>
+                    <option value="gpt-5.2">gpt-5.2</option>
+                    <option value="gpt-5-mini" selected>gpt-5-mini</option>
+                    <option value="claude-opus-4-6">claude-opus-4-6</option>
+                    <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+                    <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+                    <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
+                    <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
+                  </select>
+                </div>
+              </div>
+              <div id="compare-row" class="compare-row hidden">
+                <div>
+                  <label for="compare-model-1">Model 1</label>
+                  <select id="compare-model-1">
+                    <option value="gpt-5.3-codex">gpt-5.3-codex</option>
+                    <option value="gpt-5.2">gpt-5.2</option>
+                    <option value="gpt-5-mini">gpt-5-mini</option>
+                    <option value="claude-opus-4-6">claude-opus-4-6</option>
+                    <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+                    <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+                    <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
+                    <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="compare-model-2">Model 2</label>
+                  <select id="compare-model-2">
+                    <option value="gpt-5.3-codex">gpt-5.3-codex</option>
+                    <option value="gpt-5.2" selected>gpt-5.2</option>
+                    <option value="gpt-5-mini">gpt-5-mini</option>
+                    <option value="claude-opus-4-6">claude-opus-4-6</option>
+                    <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+                    <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+                    <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
+                    <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="compare-model-3">Model 3</label>
+                  <select id="compare-model-3">
+                    <option value="gpt-5.3-codex">gpt-5.3-codex</option>
+                    <option value="gpt-5.2">gpt-5.2</option>
+                    <option value="gpt-5-mini" selected>gpt-5-mini</option>
+                    <option value="claude-opus-4-6">claude-opus-4-6</option>
+                    <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+                    <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+                    <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
+                    <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <h2 class="form-title">Prompt</h2>
+            <p class="form-subtitle">Write your task or use benchmark prompt tools.</p>
+            <label for="prompt">Prompt Input</label>
+            <div class="prompt-tools">
+              <select id="example-prompt">
+                <option value="">Choose example prompt...</option>
+              </select>
+              <button id="replace-prompt-btn" type="button" class="btn-inline">Replace</button>
+              <button id="insert-prompt-btn" type="button" class="btn-inline">Insert</button>
+            </div>
+            <div class="hint">Quick-fill the prompt box with reusable benchmark prompts.</div>
+            <textarea id="prompt" placeholder="Ask a question about uploaded content, or text only..."></textarea>
+            <div class="prompt-actions">
+              <button id="open-files-modal-btn" type="button" class="btn-inline">Manage Files</button>
+              <div id="files-summary" class="files-summary">No files uploaded.</div>
+            </div>
+            <div class="hint">Supported: images, pdf, docx, xlsx, pptx. Auto mode uses scoring-based routing with uploaded context.</div>
+            <div class="send-wrap">
+              <button id="send-btn" type="button">Send</button>
+              <div id="status" class="hint">Idle.</div>
+            </div>
+          </section>
         </div>
       </div>
 
-      <div>
-        <label for="prompt">Prompt</label>
-        <textarea id="prompt" placeholder="Ask a question about uploaded content, or text only..."></textarea>
+      <div class="right-column">
+        <h1 class="main-title">Model Router Playground</h1>
+        <section class="pane collapse-pane">
+          <details id="output-panel" open>
+            <summary>Output</summary>
+            <div class="collapse-body panel-scroll panel-output">
+              <div id="output-metrics"></div>
+              <div id="output" class="output-render"></div>
+              <div id="compare-output" class="compare-grid hidden">
+                <div class="compare-card">
+                  <h4 id="compare-title-1" class="compare-title">Model 1</h4>
+                  <div id="compare-metrics-1"></div>
+                  <div id="compare-body-1" class="output-render"></div>
+                </div>
+                <div class="compare-card">
+                  <h4 id="compare-title-2" class="compare-title">Model 2</h4>
+                  <div id="compare-metrics-2"></div>
+                  <div id="compare-body-2" class="output-render"></div>
+                </div>
+                <div class="compare-card">
+                  <h4 id="compare-title-3" class="compare-title">Model 3</h4>
+                  <div id="compare-metrics-3"></div>
+                  <div id="compare-body-3" class="output-render"></div>
+                </div>
+              </div>
+            </div>
+          </details>
+        </section>
+        <section class="pane collapse-pane">
+          <details id="routing-panel" open>
+            <summary>Routing Scores</summary>
+            <div class="collapse-body">
+              <div id="routing-summary" class="hint">No routing details yet.</div>
+              <div id="query-requirement-metrics"></div>
+              <div id="query-requirements" class="output-render" style="margin-top:10px;"></div>
+              <div class="output-render" style="margin-top:10px;">
+                <h3>Model Benchmark Ranking</h3>
+              </div>
+              <div style="overflow:auto; margin-top:8px;">
+                <table id="routing-table" class="routing-table" style="width:100%; border-collapse: collapse; font-size: 12px;">
+                  <thead>
+                    <tr>
+                      <th class="col-model">Model</th>
+                      <th class="col-num col-final">Final</th>
+                      <th class="col-num col-qlc">Latency</th>
+                      <th class="col-num col-qlc">Cost</th>
+                      <th class="col-num col-qlc col-qlc-start col-qlc-end">Quality</th>
+                      <th class="col-num">Language</th>
+                      <th class="col-num">Reasoning</th>
+                      <th class="col-num">Coding</th>
+                      <th class="col-num">Math</th>
+                      <th class="col-num">Data</th>
+                      <th class="col-num">Image</th>
+                    </tr>
+                  </thead>
+                  <tbody id="routing-table-body"></tbody>
+                </table>
+              </div>
+              <div id="routing-formula" class="output-render" style="margin-top:10px;"></div>
+            </div>
+          </details>
+        </section>
+        <section class="pane collapse-pane">
+          <details id="raw-panel">
+            <summary>Raw Response</summary>
+            <div class="collapse-body">
+              <pre id="raw"></pre>
+            </div>
+          </details>
+        </section>
       </div>
-
-      <div>
-        <label for="files">Upload Files</label>
-        <input id="files" type="file" multiple accept="image/*,.pdf,.docx,.xlsx,.pptx">
-        <div style="display:flex; gap:8px; margin-top:8px;">
-          <button id="clear-files-btn" type="button" class="btn-inline">Clear Uploaded</button>
-        </div>
-        <div class="hint">Supported: images, pdf, docx, xlsx, pptx. Auto mode uses scoring-based routing with uploaded context.</div>
-        <div id="uploaded-files" class="uploaded-list"></div>
-      </div>
-
-      <button id="send-btn" type="button">Send</button>
-      <div id="status" class="hint">Idle.</div>
     </div>
-
-    <section class="pane">
-      <h3>Output</h3>
-      <div id="output-metrics"></div>
-      <div id="output" class="output-render"></div>
-      <div id="compare-output" class="compare-grid hidden">
-        <div class="compare-card">
-          <h4 id="compare-title-1" class="compare-title">Model 1</h4>
-          <div id="compare-metrics-1"></div>
-          <div id="compare-body-1" class="output-render"></div>
-        </div>
-        <div class="compare-card">
-          <h4 id="compare-title-2" class="compare-title">Model 2</h4>
-          <div id="compare-metrics-2"></div>
-          <div id="compare-body-2" class="output-render"></div>
-        </div>
-        <div class="compare-card">
-          <h4 id="compare-title-3" class="compare-title">Model 3</h4>
-          <div id="compare-metrics-3"></div>
-          <div id="compare-body-3" class="output-render"></div>
-        </div>
-      </div>
-    </section>
-    <section class="pane">
-      <h3>Routing Scores</h3>
-      <div id="routing-summary" class="hint">No routing details yet.</div>
-      <div id="query-requirement-metrics"></div>
-      <div style="overflow:auto; margin-top:8px;">
-        <table id="routing-table" class="routing-table" style="width:100%; border-collapse: collapse; font-size: 13px;">
-          <thead>
-            <tr>
-              <th class="col-model">Model</th>
-              <th class="col-num col-final">Final</th>
-              <th class="col-num col-qlc">Latency</th>
-              <th class="col-num col-qlc">Cost</th>
-              <th class="col-num col-qlc col-qlc-start col-qlc-end">Quality</th>
-              <th class="col-num">Language</th>
-              <th class="col-num">Reasoning</th>
-              <th class="col-num">Coding</th>
-              <th class="col-num">Math</th>
-              <th class="col-num">Data</th>
-              <th class="col-num">Image</th>
-            </tr>
-          </thead>
-          <tbody id="routing-table-body"></tbody>
-        </table>
-      </div>
-      <div id="routing-formula" class="output-render" style="margin-top:10px;"></div>
-      <div id="query-requirements" class="output-render" style="margin-top:10px;"></div>
-    </section>
-    <section class="pane">
-      <h3>Raw Response</h3>
-      <pre id="raw"></pre>
-    </section>
   </main>
+  <div id="files-modal" class="file-modal-backdrop hidden" aria-hidden="true">
+    <div class="file-modal-card" role="dialog" aria-modal="true" aria-labelledby="files-modal-title">
+      <div class="file-modal-header">
+        <h3 id="files-modal-title">Upload Files</h3>
+        <button id="close-files-modal-btn" type="button" class="modal-close-btn">Close</button>
+      </div>
+      <p class="form-subtitle">Attach optional files before sending your request.</p>
+      <input id="files" type="file" multiple accept="image/*,.pdf,.docx,.xlsx,.pptx">
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button id="clear-files-btn" type="button" class="btn-inline">Clear Uploaded</button>
+      </div>
+      <div class="hint">Supported: images, pdf, docx, xlsx, pptx. Auto mode uses scoring-based routing with uploaded context.</div>
+      <div id="uploaded-files" class="uploaded-list"></div>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script>
@@ -428,12 +686,21 @@
   <script>
     const modeEl = document.getElementById("mode");
     const objectiveEl = document.getElementById("routing-objective");
-    const manualModelLabelEl = document.getElementById("manual-model-label");
+    const autoControlsEl = document.getElementById("auto-controls");
+    const manualControlsEl = document.getElementById("manual-controls");
+    const queryEvaluatorModelEl = document.getElementById("query-evaluator-model");
     const manualModelEl = document.getElementById("manual-model");
     const compareRowEl = document.getElementById("compare-row");
     const compareModel1El = document.getElementById("compare-model-1");
     const compareModel2El = document.getElementById("compare-model-2");
     const compareModel3El = document.getElementById("compare-model-3");
+    const examplePromptEl = document.getElementById("example-prompt");
+    const replacePromptBtn = document.getElementById("replace-prompt-btn");
+    const insertPromptBtn = document.getElementById("insert-prompt-btn");
+    const openFilesModalBtn = document.getElementById("open-files-modal-btn");
+    const filesSummaryEl = document.getElementById("files-summary");
+    const filesModalEl = document.getElementById("files-modal");
+    const closeFilesModalBtn = document.getElementById("close-files-modal-btn");
     const filesEl = document.getElementById("files");
     const clearFilesBtn = document.getElementById("clear-files-btn");
     const uploadedFilesEl = document.getElementById("uploaded-files");
@@ -465,27 +732,78 @@
     const queryRequirementsEl = document.getElementById("query-requirements");
     const rawEl = document.getElementById("raw");
     const uploadedFiles = [];
+    const EXAMPLE_PROMPTS = [
+      {
+        label: "Joke (math + language)",
+        text: "Write a joke about d/dx e^x = e^x.",
+      },
+      {
+        label: "Debug Python bug",
+        text: "Fix this Python bug and return code only: if n % 2 = 0",
+      },
+      {
+        label: "Short proof",
+        text: "Prove in 2-3 lines: sum of two odd numbers is even.",
+      },
+      {
+        label: "CLT rigorous proof",
+        text: "Prove the Central Limit Theorem for i.i.d. variables with finite mean and variance using characteristic functions; give a rigorous step-by-step proof and state every theorem used.",
+      },
+      {
+        label: "CLT intuition (middle school)",
+        text: "Explain the Central Limit Theorem intuitively to a middle school student, without heavy math notation.",
+      },
+    ];
+
+    function initExamplePrompts() {
+      for (let i = 0; i < EXAMPLE_PROMPTS.length; i++) {
+        const option = document.createElement("option");
+        option.value = String(i);
+        option.textContent = `${i + 1}. ${EXAMPLE_PROMPTS[i].label}`;
+        examplePromptEl.appendChild(option);
+      }
+    }
+
+    function getSelectedExamplePromptText() {
+      const idx = Number(examplePromptEl.value);
+      if (!Number.isInteger(idx) || idx < 0 || idx >= EXAMPLE_PROMPTS.length) {
+        return "";
+      }
+      return EXAMPLE_PROMPTS[idx].text;
+    }
+
+    function applySelectedExamplePrompt(mode) {
+      const text = getSelectedExamplePromptText();
+      if (!text) {
+        setStatus("Choose an example prompt first.", "hint");
+        return;
+      }
+      if (mode === "insert" && promptEl.value.trim()) {
+        promptEl.value = `${promptEl.value}\n\n${text}`;
+      } else {
+        promptEl.value = text;
+      }
+      promptEl.focus();
+      setStatus("Example prompt applied.", "hint");
+    }
 
     function applyModeState() {
       const mode = modeEl.value;
-      objectiveEl.disabled = mode !== "auto";
-      const compareMode = mode === "model-comparison";
-      if (mode === "auto") {
-        manualModelLabelEl.textContent = "Query Evaluation";
-        manualModelEl.disabled = false;
-      } else if (mode === "manual") {
-        manualModelLabelEl.textContent = "Manual Model";
-        manualModelEl.disabled = false;
-      } else {
-        manualModelLabelEl.textContent = "Manual Model";
-        manualModelEl.disabled = true;
-      }
-      compareRowEl.classList.toggle("hidden", !compareMode);
-      outputEl.classList.toggle("hidden", compareMode);
-      outputEl.style.display = compareMode ? "none" : "";
-      if (compareMode) {
-        manualModelEl.disabled = true;
-        objectiveEl.disabled = true;
+      const isAutoMode = mode === "auto";
+      const isManualMode = mode === "manual";
+      const isCompareMode = mode === "model-comparison";
+
+      autoControlsEl.classList.toggle("hidden", !isAutoMode);
+      manualControlsEl.classList.toggle("hidden", !isManualMode);
+      compareRowEl.classList.toggle("hidden", !isCompareMode);
+
+      objectiveEl.disabled = !isAutoMode;
+      queryEvaluatorModelEl.disabled = !isAutoMode;
+      manualModelEl.disabled = !isManualMode;
+
+      outputEl.classList.toggle("hidden", isCompareMode);
+      outputEl.style.display = isCompareMode ? "none" : "";
+      if (isCompareMode) {
         compareOutputEl.classList.remove("hidden");
         compareOutputEl.style.display = "grid";
       } else {
@@ -510,6 +828,7 @@
     function renderUploadedFiles() {
       if (!uploadedFiles.length) {
         uploadedFilesEl.innerHTML = `<div class="uploaded-item"><span class="hint">No uploaded files.</span></div>`;
+        filesSummaryEl.textContent = "No files uploaded.";
         return;
       }
       uploadedFilesEl.innerHTML = uploadedFiles.map(item => `
@@ -524,6 +843,24 @@
           <button class="btn-inline" data-remove-file-id="${item.file_id}" type="button">Remove</button>
         </div>
       `).join("");
+      const kinds = {};
+      for (const file of uploadedFiles) {
+        kinds[file.kind] = (kinds[file.kind] || 0) + 1;
+      }
+      const kindSummary = Object.entries(kinds)
+        .map(([kind, count]) => `${kind}: ${count}`)
+        .join(", ");
+      filesSummaryEl.textContent = `${uploadedFiles.length} uploaded (${kindSummary})`;
+    }
+
+    function openFilesModal() {
+      filesModalEl.classList.remove("hidden");
+      filesModalEl.setAttribute("aria-hidden", "false");
+    }
+
+    function closeFilesModal() {
+      filesModalEl.classList.add("hidden");
+      filesModalEl.setAttribute("aria-hidden", "true");
     }
 
     async function uploadSelectedFiles() {
@@ -696,7 +1033,7 @@
           mode,
           routing_objective: objectiveEl.value,
           manual_model: mode === "manual" ? manualModelEl.value : null,
-          query_evaluator_model: mode === "auto" ? manualModelEl.value : null,
+          query_evaluator_model: mode === "auto" ? queryEvaluatorModelEl.value : null,
           file_ids: fileIds,
           options: {}
         };
@@ -727,6 +1064,18 @@
     }
 
     sendBtn.addEventListener("click", send);
+    openFilesModalBtn.addEventListener("click", openFilesModal);
+    closeFilesModalBtn.addEventListener("click", closeFilesModal);
+    filesModalEl.addEventListener("click", (event) => {
+      if (event.target === filesModalEl) {
+        closeFilesModal();
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !filesModalEl.classList.contains("hidden")) {
+        closeFilesModal();
+      }
+    });
     filesEl.addEventListener("change", async () => {
       try {
         await uploadSelectedFiles();
@@ -752,6 +1101,9 @@
         setStatus(err?.message || "Failed to remove file", "status-err");
       }
     });
+    replacePromptBtn.addEventListener("click", () => applySelectedExamplePrompt("replace"));
+    insertPromptBtn.addEventListener("click", () => applySelectedExamplePrompt("insert"));
+    initExamplePrompts();
     renderUploadedFiles();
     applyModeState();
 
@@ -976,3 +1328,5 @@
   </script>
 </body>
 </html>
+
+
