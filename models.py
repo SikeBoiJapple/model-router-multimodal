@@ -12,6 +12,7 @@ class GenerateAutoRequest(BaseModel):
         "quality-first", "latency-first", "cost-first", "balanced"
     ] = "balanced"
     manual_model: str | None = None
+    query_evaluator_model: str | None = None
     file_ids: list[str] = Field(default_factory=list)
     options: dict[str, Any] = Field(default_factory=dict)
 
@@ -52,6 +53,7 @@ class GenerateAutoResponse(GenerateResponse):
     used_file_ids: list[str] = Field(default_factory=list)
     routing_objective: Literal["quality-first", "latency-first", "cost-first", "balanced"] | None = None
     query_requirements: dict[str, float] = Field(default_factory=dict)
+    query_requirement_metrics: dict[str, Any] = Field(default_factory=dict)
     objective_weights: dict[str, float] = Field(default_factory=dict)
     image_alpha: float | None = None
     routing_scores: list[dict[str, Any]] = Field(default_factory=list)

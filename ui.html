@@ -276,7 +276,7 @@
           </select>
         </div>
         <div>
-          <label for="routing-objective">Auto Objective</label>
+          <label for="routing-objective">Router Objective</label>
           <select id="routing-objective">
             <option value="balanced" selected>balanced</option>
             <option value="quality-first">quality-first</option>
@@ -285,11 +285,11 @@
           </select>
         </div>
         <div>
-          <label for="manual-model">Manual Model</label>
-          <select id="manual-model" disabled>
+          <label id="manual-model-label" for="manual-model">Query Evaluation</label>
+          <select id="manual-model">
             <option value="gpt-5.3-codex">gpt-5.3-codex</option>
             <option value="gpt-5.2">gpt-5.2</option>
-            <option value="gpt-5-mini">gpt-5-mini</option>
+            <option value="gpt-5-mini" selected>gpt-5-mini</option>
             <option value="claude-opus-4-6">claude-opus-4-6</option>
             <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
             <option value="claude-haiku-4-5">claude-haiku-4-5</option>
@@ -384,6 +384,7 @@
     <section class="pane">
       <h3>Routing Scores</h3>
       <div id="routing-summary" class="hint">No routing details yet.</div>
+      <div id="query-requirement-metrics"></div>
       <div style="overflow:auto; margin-top:8px;">
         <table id="routing-table" class="routing-table" style="width:100%; border-collapse: collapse; font-size: 13px;">
           <thead>
@@ -427,6 +428,7 @@
   <script>
     const modeEl = document.getElementById("mode");
     const objectiveEl = document.getElementById("routing-objective");
+    const manualModelLabelEl = document.getElementById("manual-model-label");
     const manualModelEl = document.getElementById("manual-model");
     const compareRowEl = document.getElementById("compare-row");
     const compareModel1El = document.getElementById("compare-model-1");
@@ -457,6 +459,7 @@
       document.getElementById("compare-metrics-3")
     ];
     const routingSummaryEl = document.getElementById("routing-summary");
+    const queryRequirementMetricsEl = document.getElementById("query-requirement-metrics");
     const routingTableBodyEl = document.getElementById("routing-table-body");
     const routingFormulaEl = document.getElementById("routing-formula");
     const queryRequirementsEl = document.getElementById("query-requirements");
@@ -465,9 +468,18 @@
 
     function applyModeState() {
       const mode = modeEl.value;
-      manualModelEl.disabled = mode !== "manual";
       objectiveEl.disabled = mode !== "auto";
       const compareMode = mode === "model-comparison";
+      if (mode === "auto") {
+        manualModelLabelEl.textContent = "Query Evaluation";
+        manualModelEl.disabled = false;
+      } else if (mode === "manual") {
+        manualModelLabelEl.textContent = "Manual Model";
+        manualModelEl.disabled = false;
+      } else {
+        manualModelLabelEl.textContent = "Manual Model";
+        manualModelEl.disabled = true;
+      }
       compareRowEl.classList.toggle("hidden", !compareMode);
       outputEl.classList.toggle("hidden", compareMode);
       outputEl.style.display = compareMode ? "none" : "";
@@ -604,6 +616,7 @@
         compareBodyEls[i].innerHTML = "";
       }
       routingSummaryEl.textContent = "No routing details yet.";
+      queryRequirementMetricsEl.innerHTML = "";
       routingTableBodyEl.innerHTML = "";
       routingFormulaEl.innerHTML = "";
       queryRequirementsEl.innerHTML = "";
@@ -630,6 +643,7 @@
               mode: "manual",
               routing_objective: objectiveEl.value,
               manual_model: model,
+              query_evaluator_model: null,
               file_ids: fileIds,
               options: {}
             };
@@ -682,6 +696,7 @@
           mode,
           routing_objective: objectiveEl.value,
           manual_model: mode === "manual" ? manualModelEl.value : null,
+          query_evaluator_model: mode === "auto" ? manualModelEl.value : null,
           file_ids: fileIds,
           options: {}
         };
@@ -787,8 +802,8 @@
     function renderResponseMetrics(el, payload, requestedModel = null) {
       const usage = payload?.token_usage || {};
       const titleLabel = requestedModel
-        ? `${requestedModel} Metrics`
-        : `${payload?.provider || "model"}/${payload?.model || ""} Metrics`;
+        ? `${requestedModel}`
+        : `${payload?.provider || "model"}/${payload?.model || ""}`;
       const inputTokens = usage.input_tokens ?? "n/a";
       const outputTokens = usage.output_tokens ?? "n/a";
       const totalTokens = usage.total_tokens ?? "n/a";
@@ -821,6 +836,18 @@
     }
 
     async function renderRoutingDetails(data) {
+      const scorerMetrics = data.query_requirement_metrics || {};
+      const scorerModelName = scorerMetrics.model || "query-evaluator";
+      if (Object.keys(scorerMetrics).length > 0) {
+        renderResponseMetrics(
+          queryRequirementMetricsEl,
+          scorerMetrics,
+          `${scorerModelName} Query Requirement Metrics`
+        );
+      } else {
+        queryRequirementMetricsEl.innerHTML = "";
+      }
+
       const scores = data.routing_scores || [];
       if (!scores.length) {
         routingSummaryEl.textContent = "No routing score details returned.";
@@ -828,7 +855,7 @@
       }
 
       const selectedModelKey = modelKeyFromResponse(data);
-      routingSummaryEl.textContent = `Objective: ${data.routing_objective || "n/a"} | Selected: ${selectedModelKey}`;
+      routingSummaryEl.textContent = `Router Objective: ${data.routing_objective || "n/a"} | Selected: ${selectedModelKey}`;
 
       routingTableBodyEl.innerHTML = "";
       for (const row of scores) {
@@ -880,7 +907,7 @@
 
       const qualityLines = [
         "quality calculation:",
-        "q_req = [language, reasoning, coding, mathematics, data_analysis]  # query importance vector (from gpt-5-mini)",
+        `q_req = [language, reasoning, coding, mathematics, data_analysis]  # query importance vector (from ${scorerModelName})`,
         `q_req = [${reqVector.join(", ")}]`,
         "m_perf = [language, reasoning, coding, mathematics, data_analysis]  # selected model performance vector (from ratings)",
         `m_perf = [${perfVector.join(", ")}]`,
@@ -938,7 +965,7 @@
       await renderRichText(routingFormulaEl, formulaText);
 
       const queryText =
-        `### Query Requirements (from gpt-5-mini)\n` +
+        `### Query Requirements (from ${scorerModelName})\n` +
         `- language: **${fmtNum(req.language)}**\n` +
         `- reasoning: **${fmtNum(req.reasoning)}**\n` +
         `- coding: **${fmtNum(req.coding)}**\n` +

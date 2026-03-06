@@ -150,10 +150,16 @@ async def generate(request: GenerateAutoRequest) -> GenerateAutoResponse:
                 )
             targets = [resolve_model(request.manual_model)]
             requirements = {}
+            query_requirement_metrics: dict[str, Any] = {}
             objective_weights = {}
             routing_scores: list[dict[str, Any]] = []
         else:
-            requirements = await _infer_query_requirements(request.input, files)
+            scorer_model_key = request.query_evaluator_model or QUERY_SCORER_MODEL_KEY
+            requirements, query_requirement_metrics = await _infer_query_requirements(
+                request.input,
+                files,
+                scorer_model_key,
+            )
             objective_weights = OBJECTIVE_WEIGHTS.get(
                 objective, OBJECTIVE_WEIGHTS[DEFAULT_ROUTER_OBJECTIVE]
             )
@@ -223,6 +229,7 @@ async def generate(request: GenerateAutoRequest) -> GenerateAutoResponse:
                     used_file_ids=request.file_ids,
                     routing_objective=objective if request.mode == "auto" else None,
                     query_requirements=requirements,
+                    query_requirement_metrics=query_requirement_metrics,
                     objective_weights=objective_weights,
                     image_alpha=IMAGE_ALPHA if ("image" in file_kinds and request.mode == "auto") else None,
                     routing_scores=routing_scores,
@@ -262,9 +269,14 @@ def _model_key_for_target(provider: str, model: str) -> str:
     return f"{provider}:{model}"
 
 
-async def _infer_query_requirements(prompt: str, files: list[ProcessedFile]) -> dict[str, float]:
+async def _infer_query_requirements(
+    prompt: str,
+    files: list[ProcessedFile],
+    scorer_model_key: str,
+) -> tuple[dict[str, float], dict[str, Any]]:
+    scorer_target = None
     try:
-        scorer_target = resolve_model(QUERY_SCORER_MODEL_KEY)
+        scorer_target = resolve_model(scorer_model_key)
         scorer_prompt = (
             "You are a routing feature scorer.\n"
             "Score requirements using both the user text and any attached files/images.\n"
@@ -299,20 +311,37 @@ async def _infer_query_requirements(prompt: str, files: list[ProcessedFile]) -> 
             model=scorer_target.model,
             options=scorer_options,
         )
+        started = perf_counter()
         normalized = await apim_client.generate(
             provider=scorer_target.provider,
             model=scorer_target.model,
             prompt=scorer_prompt,
             options=scorer_options,
         )
+        latency_ms = (perf_counter() - started) * 1000.0
+        token_usage = _extract_token_usage(scorer_target.provider, normalized["raw"])
+        estimated_cost = _estimate_cost_usd(scorer_target.model, token_usage)
+        metrics: dict[str, Any] = {
+            "provider": scorer_target.provider,
+            "model": scorer_target.model,
+            "latency_ms": round(latency_ms, 2),
+            "token_usage": token_usage,
+            "estimated_cost_usd": estimated_cost,
+        }
         parsed = _parse_query_requirements(normalized["output"])
         if parsed:
-            return parsed
+            return parsed, metrics
         logger.warning("Query requirement scorer returned invalid output; using defaults")
-        return DEFAULT_QUERY_REQUIREMENTS.copy()
+        metrics["error"] = "invalid_scorer_output"
+        return DEFAULT_QUERY_REQUIREMENTS.copy(), metrics
     except (APIMClientError, ModelMappingError) as exc:
         logger.warning("Query requirement scoring failed (%s); using defaults", exc)
-        return DEFAULT_QUERY_REQUIREMENTS.copy()
+        metrics: dict[str, Any] = {
+            "provider": scorer_target.provider if scorer_target else "openai",
+            "model": scorer_target.model if scorer_target else scorer_model_key,
+            "error": str(exc),
+        }
+        return DEFAULT_QUERY_REQUIREMENTS.copy(), metrics
 
 
 def _parse_query_requirements(raw_output: str) -> dict[str, float] | None:

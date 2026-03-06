@@ -61,7 +61,7 @@ OBJECTIVE_WEIGHTS: dict[str, dict[str, float]] = {
     "cost-first": {"quality": 0.25, "latency": 0.20, "cost": 0.55},
     "balanced": {"quality": 0.55, "latency": 0.25, "cost": 0.20},
 }
-IMAGE_ALPHA = 0.40
+IMAGE_ALPHA = 0.2
 
 
 def _load_model_ratings() -> dict[str, dict[str, float]]:

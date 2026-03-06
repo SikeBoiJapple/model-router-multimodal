@@ -22,6 +22,7 @@ Single generation endpoint for all routing behavior.
 - `mode="auto"`: scored routing + fallback chain
 - `mode="manual"`: uses `manual_model`
 - `routing_objective`: `quality-first` | `latency-first` | `cost-first` | `balanced`
+- `query_evaluator_model` (auto mode): which model infers query requirements; defaults to `gpt-5-mini`
 - Supports optional `file_ids` from `/files/upload`
 - Reasoning effort behavior for OpenAI GPT-5 family:
   - Normal generation requests use `reasoning.effort="low"`
@@ -38,6 +39,7 @@ Example request (auto):
   "mode": "auto",
   "routing_objective": "balanced",
   "manual_model": null,
+  "query_evaluator_model": "gpt-5-mini",
   "file_ids": [],
   "options": {}
 }
@@ -74,3 +76,12 @@ Routing details:
   - `gemini-3-flash-preview`
 - Prompt-only (text) usage is supported without files.
 - UI supports uploading multiple files and removing files before generation.
+- Auto response also includes `query_requirement_metrics` (latency, token usage, estimated cost for the gpt-5-mini requirement-scorer call).
+
+## Example Prompts (Text-Only)
+
+1. `Write a joke about d/dx e^x = e^x.`
+2. `Fix this Python bug and return code only: if n % 2 = 0`
+3. `Prove in 2–3 lines: sum of two odd numbers is even.`
+4. `Prove the Central Limit Theorem for i.i.d. variables with finite mean and variance using characteristic functions; give a rigorous step-by-step proof and state every theorem used.`
+5. `Explain the Central Limit Theorem intuitively to a middle school student, without heavy math notation.`
