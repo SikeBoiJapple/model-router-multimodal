@@ -103,6 +103,24 @@
       max-height: none;
       overflow: auto;
     }
+    .response-metrics {
+      border: 1px solid #c9d7ea;
+      border-left: 4px solid #3f7de0;
+      border-radius: 8px;
+      background: #f4f9ff;
+      padding: 8px 10px;
+      margin: 0 0 10px;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .response-metrics .title {
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #1d3f78;
+    }
+    .response-metrics .line {
+      color: #21354d;
+    }
     .routing-table th,
     .routing-table td {
       border-bottom: 1px solid var(--line);
@@ -151,6 +169,13 @@
       gap: 12px;
       grid-template-columns: 1fr 1fr 1fr;
     }
+    .compare-row {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr 1fr 1fr;
+      margin-top: 2px;
+    }
+    .hidden { display: none !important; }
     .uploaded-list {
       margin-top: 10px;
       border: 1px solid var(--line);
@@ -207,9 +232,33 @@
       cursor: pointer;
       font-weight: 600;
     }
+    .compare-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .compare-card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      padding: 10px;
+      min-height: 180px;
+    }
+    .compare-title {
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .compare-error {
+      color: var(--err);
+      font-weight: 600;
+      white-space: pre-wrap;
+    }
     @media (max-width: 760px) {
       .row-2 { grid-template-columns: 1fr; }
       .row-3 { grid-template-columns: 1fr; }
+      .compare-row { grid-template-columns: 1fr; }
+      .compare-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -223,6 +272,7 @@
           <select id="mode">
             <option value="auto" selected>auto (scored routing)</option>
             <option value="manual">manual model selection</option>
+            <option value="model-comparison">model comparison</option>
           </select>
         </div>
         <div>
@@ -240,6 +290,47 @@
             <option value="gpt-5.3-codex">gpt-5.3-codex</option>
             <option value="gpt-5.2">gpt-5.2</option>
             <option value="gpt-5-mini">gpt-5-mini</option>
+            <option value="claude-opus-4-6">claude-opus-4-6</option>
+            <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+            <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+            <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
+            <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
+          </select>
+        </div>
+      </div>
+      <div id="compare-row" class="compare-row hidden">
+        <div>
+          <label for="compare-model-1">Model 1</label>
+          <select id="compare-model-1">
+            <option value="gpt-5.3-codex">gpt-5.3-codex</option>
+            <option value="gpt-5.2">gpt-5.2</option>
+            <option value="gpt-5-mini">gpt-5-mini</option>
+            <option value="claude-opus-4-6">claude-opus-4-6</option>
+            <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+            <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+            <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
+            <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
+          </select>
+        </div>
+        <div>
+          <label for="compare-model-2">Model 2</label>
+          <select id="compare-model-2">
+            <option value="gpt-5.3-codex">gpt-5.3-codex</option>
+            <option value="gpt-5.2" selected>gpt-5.2</option>
+            <option value="gpt-5-mini">gpt-5-mini</option>
+            <option value="claude-opus-4-6">claude-opus-4-6</option>
+            <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+            <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+            <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview</option>
+            <option value="gemini-3-flash-preview">gemini-3-flash-preview</option>
+          </select>
+        </div>
+        <div>
+          <label for="compare-model-3">Model 3</label>
+          <select id="compare-model-3">
+            <option value="gpt-5.3-codex">gpt-5.3-codex</option>
+            <option value="gpt-5.2">gpt-5.2</option>
+            <option value="gpt-5-mini" selected>gpt-5-mini</option>
             <option value="claude-opus-4-6">claude-opus-4-6</option>
             <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
             <option value="claude-haiku-4-5">claude-haiku-4-5</option>
@@ -270,7 +361,25 @@
 
     <section class="pane">
       <h3>Output</h3>
+      <div id="output-metrics"></div>
       <div id="output" class="output-render"></div>
+      <div id="compare-output" class="compare-grid hidden">
+        <div class="compare-card">
+          <h4 id="compare-title-1" class="compare-title">Model 1</h4>
+          <div id="compare-metrics-1"></div>
+          <div id="compare-body-1" class="output-render"></div>
+        </div>
+        <div class="compare-card">
+          <h4 id="compare-title-2" class="compare-title">Model 2</h4>
+          <div id="compare-metrics-2"></div>
+          <div id="compare-body-2" class="output-render"></div>
+        </div>
+        <div class="compare-card">
+          <h4 id="compare-title-3" class="compare-title">Model 3</h4>
+          <div id="compare-metrics-3"></div>
+          <div id="compare-body-3" class="output-render"></div>
+        </div>
+      </div>
     </section>
     <section class="pane">
       <h3>Routing Scores</h3>
@@ -319,13 +428,34 @@
     const modeEl = document.getElementById("mode");
     const objectiveEl = document.getElementById("routing-objective");
     const manualModelEl = document.getElementById("manual-model");
+    const compareRowEl = document.getElementById("compare-row");
+    const compareModel1El = document.getElementById("compare-model-1");
+    const compareModel2El = document.getElementById("compare-model-2");
+    const compareModel3El = document.getElementById("compare-model-3");
     const filesEl = document.getElementById("files");
     const clearFilesBtn = document.getElementById("clear-files-btn");
     const uploadedFilesEl = document.getElementById("uploaded-files");
     const promptEl = document.getElementById("prompt");
     const sendBtn = document.getElementById("send-btn");
     const statusEl = document.getElementById("status");
+    const outputMetricsEl = document.getElementById("output-metrics");
     const outputEl = document.getElementById("output");
+    const compareOutputEl = document.getElementById("compare-output");
+    const compareTitleEls = [
+      document.getElementById("compare-title-1"),
+      document.getElementById("compare-title-2"),
+      document.getElementById("compare-title-3")
+    ];
+    const compareBodyEls = [
+      document.getElementById("compare-body-1"),
+      document.getElementById("compare-body-2"),
+      document.getElementById("compare-body-3")
+    ];
+    const compareMetricsEls = [
+      document.getElementById("compare-metrics-1"),
+      document.getElementById("compare-metrics-2"),
+      document.getElementById("compare-metrics-3")
+    ];
     const routingSummaryEl = document.getElementById("routing-summary");
     const routingTableBodyEl = document.getElementById("routing-table-body");
     const routingFormulaEl = document.getElementById("routing-formula");
@@ -333,10 +463,25 @@
     const rawEl = document.getElementById("raw");
     const uploadedFiles = [];
 
-    modeEl.addEventListener("change", () => {
-      manualModelEl.disabled = modeEl.value !== "manual";
-      objectiveEl.disabled = modeEl.value !== "auto";
-    });
+    function applyModeState() {
+      const mode = modeEl.value;
+      manualModelEl.disabled = mode !== "manual";
+      objectiveEl.disabled = mode !== "auto";
+      const compareMode = mode === "model-comparison";
+      compareRowEl.classList.toggle("hidden", !compareMode);
+      outputEl.classList.toggle("hidden", compareMode);
+      outputEl.style.display = compareMode ? "none" : "";
+      if (compareMode) {
+        manualModelEl.disabled = true;
+        objectiveEl.disabled = true;
+        compareOutputEl.classList.remove("hidden");
+        compareOutputEl.style.display = "grid";
+      } else {
+        compareOutputEl.classList.add("hidden");
+        compareOutputEl.style.display = "none";
+      }
+    }
+    modeEl.addEventListener("change", applyModeState);
 
     function setStatus(message, kind = "hint") {
       statusEl.textContent = message;
@@ -449,7 +594,15 @@
 
     async function send() {
       sendBtn.disabled = true;
+      outputMetricsEl.innerHTML = "";
       outputEl.innerHTML = "";
+      compareOutputEl.classList.add("hidden");
+      compareOutputEl.style.display = "none";
+      for (let i = 0; i < 3; i++) {
+        compareTitleEls[i].textContent = `Model ${i + 1}`;
+        compareMetricsEls[i].innerHTML = "";
+        compareBodyEls[i].innerHTML = "";
+      }
       routingSummaryEl.textContent = "No routing details yet.";
       routingTableBodyEl.innerHTML = "";
       routingFormulaEl.innerHTML = "";
@@ -460,6 +613,69 @@
       const fileIds = uploadedFiles.map(item => item.file_id);
 
       try {
+        if (mode === "model-comparison") {
+          const models = [compareModel1El.value, compareModel2El.value, compareModel3El.value];
+          if (new Set(models).size !== models.length) {
+            throw new Error("Model 1, Model 2, and Model 3 must be distinct.");
+          }
+
+          setStatus("Running model comparison...");
+          compareOutputEl.classList.remove("hidden");
+          compareOutputEl.style.display = "grid";
+          routingSummaryEl.textContent = "Model comparison mode: routing score table is not used.";
+
+          const tasks = models.map(async (model) => {
+            const body = {
+              input: prompt,
+              mode: "manual",
+              routing_objective: objectiveEl.value,
+              manual_model: model,
+              file_ids: fileIds,
+              options: {}
+            };
+            const res = await fetch("/generate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              throw new Error(data?.error?.message || `HTTP ${res.status}`);
+            }
+            return { model, data };
+          });
+
+          const results = await Promise.allSettled(tasks);
+          let successCount = 0;
+          const rawResults = [];
+
+          for (let i = 0; i < results.length; i++) {
+            const result = results[i];
+            const requestedModel = models[i];
+            compareTitleEls[i].textContent = requestedModel;
+
+            if (result.status === "fulfilled") {
+              successCount += 1;
+              const payload = result.value.data;
+              compareTitleEls[i].textContent = `${requestedModel} (${payload.provider}/${payload.model})`;
+              renderResponseMetrics(compareMetricsEls[i], payload, requestedModel);
+              await renderRichText(compareBodyEls[i], payload.output || "_No output_");
+              rawResults.push({ model: requestedModel, ok: true, response: payload });
+            } else {
+              compareMetricsEls[i].innerHTML = "";
+              compareBodyEls[i].innerHTML = `<div class="compare-error">${escapeHtml(result.reason?.message || "Request failed")}</div>`;
+              rawResults.push({ model: requestedModel, ok: false, error: result.reason?.message || "Request failed" });
+            }
+          }
+
+          setStatus(
+            `Comparison completed. ${successCount}/3 model(s) succeeded.`,
+            successCount === 3 ? "status-ok" : "status-err"
+          );
+          rawEl.textContent = JSON.stringify({ mode: "model-comparison", results: rawResults }, null, 2);
+          return;
+        }
+
         setStatus("Routing and generating...");
         const body = {
           input: prompt,
@@ -470,7 +686,7 @@
           options: {}
         };
 
-        const res = await fetch("/generate/auto", {
+        const res = await fetch("/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body)
@@ -484,6 +700,7 @@
           `Completed. Selected ${data.provider}/${data.model} | candidates: ${(data.route_candidates || []).join(", ")}`,
           "status-ok"
         );
+        renderResponseMetrics(outputMetricsEl, data);
         await renderOutput(data.output || "");
         await renderRoutingDetails(data);
         rawEl.textContent = JSON.stringify(data, null, 2);
@@ -521,6 +738,7 @@
       }
     });
     renderUploadedFiles();
+    applyModeState();
 
     async function renderOutput(text) {
       await renderRichText(outputEl, text);
@@ -552,6 +770,37 @@
       return Number(value).toFixed(3);
     }
 
+    function fmtMs(value) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) {
+        return "n/a";
+      }
+      return `${Number(value).toFixed(1)} ms`;
+    }
+
+    function fmtUsd(value) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) {
+        return "n/a";
+      }
+      return `$${Number(value).toFixed(6)}`;
+    }
+
+    function renderResponseMetrics(el, payload, requestedModel = null) {
+      const usage = payload?.token_usage || {};
+      const titleLabel = requestedModel
+        ? `${requestedModel} Metrics`
+        : `${payload?.provider || "model"}/${payload?.model || ""} Metrics`;
+      const inputTokens = usage.input_tokens ?? "n/a";
+      const outputTokens = usage.output_tokens ?? "n/a";
+      const totalTokens = usage.total_tokens ?? "n/a";
+      el.innerHTML = `
+        <div class="response-metrics">
+          <div class="title">${titleLabel}</div>
+          <div class="line">Response time: <strong>${fmtMs(payload?.latency_ms)}</strong> | Estimated cost: <strong>${fmtUsd(payload?.estimated_cost_usd)}</strong></div>
+          <div class="line">Tokens - input: <strong>${inputTokens}</strong>, output: <strong>${outputTokens}</strong>, total: <strong>${totalTokens}</strong></div>
+        </div>
+      `;
+    }
+
     function modelKeyFromResponse(data) {
       const routeCandidates = data.route_candidates || [];
       for (const key of routeCandidates) {
@@ -560,6 +809,15 @@
         }
       }
       return data.model;
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
     }
 
     async function renderRoutingDetails(data) {
@@ -627,7 +885,7 @@
         "m_perf = [language, reasoning, coding, mathematics, data_analysis]  # selected model performance vector (from ratings)",
         `m_perf = [${perfVector.join(", ")}]`,
         "",
-        "task_fit = q_req · m_perf",
+        "task_fit = q_req dot m_perf",
         `task_fit = ${taskFitExpr}`,
         `task_fit = ${fmtNum(selected.task_fit_score)}`
       ];
@@ -673,7 +931,7 @@
         `w_mode = [${weightVector.join(", ")}]\n` +
         "s = [quality, latency, cost]  # selected model score vector\n" +
         `s = [${finalVector.join(", ")}]\n` +
-        "final = w_mode · s\n" +
+        "final = w_mode dot s\n" +
         `final = ${fmtNum(w.quality)} * ${fmtNum(selected.quality_score)} + ${fmtNum(w.latency)} * ${fmtNum(selected.latency_score)} + ${fmtNum(w.cost)} * ${fmtNum(selected.cost_score)}\n` +
         `final = ${fmtNum(selected.final_score)}\n` +
         "```";

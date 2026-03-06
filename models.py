@@ -5,12 +5,6 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 
-class GenerateRequest(BaseModel):
-    model: str = Field(..., description="Abstract model key, e.g. reasoning-high")
-    input: str = Field(..., min_length=1, description="Prompt input text")
-    options: dict[str, Any] = Field(default_factory=dict)
-
-
 class GenerateAutoRequest(BaseModel):
     input: str = Field(default="", description="Prompt input text")
     mode: Literal["auto", "manual"] = "auto"
@@ -27,6 +21,9 @@ class GenerateResponse(BaseModel):
     model: str
     output: str
     raw: dict[str, Any]
+    latency_ms: float | None = None
+    token_usage: dict[str, int] = Field(default_factory=dict)
+    estimated_cost_usd: float | None = None
 
 
 class FileUploadItem(BaseModel):

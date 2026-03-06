@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
@@ -17,8 +18,6 @@ from models import (
     FileUploadResponse,
     GenerateAutoRequest,
     GenerateAutoResponse,
-    GenerateRequest,
-    GenerateResponse,
 )
 from router_logic import (
     DEFAULT_QUERY_REQUIREMENTS,
@@ -43,6 +42,16 @@ app = FastAPI(title="Centralized Model Router", version="1.1.0")
 UI_FILE = Path(__file__).with_name("ui.html")
 QUERY_SCORER_MODEL_KEY = "gpt-5-mini"
 DEFAULT_ROUTER_OBJECTIVE = "balanced"
+MODEL_PRICING_USD_PER_MILLION: dict[str, dict[str, float]] = {
+    "gpt-5.3-codex": {"input": 1.75, "output": 14.00},
+    "gpt-5.2": {"input": 1.75, "output": 14.00},
+    "gpt-5-mini": {"input": 0.25, "output": 2.00},
+    "claude-opus-4-6": {"input": 5.00, "output": 25.00},
+    "claude-sonnet-4-6": {"input": 3.00, "output": 15.00},
+    "claude-haiku-4-5": {"input": 1.00, "output": 5.00},
+    "gemini-3.1-pro-preview": {"input": 2.00, "output": 12.00},
+    "gemini-3-flash-preview": {"input": 0.50, "output": 3.00},
+}
 
 
 @app.get("/ui", response_class=HTMLResponse)
@@ -124,41 +133,8 @@ async def delete_file(file_id: str) -> dict[str, str]:
     return {"deleted_file_id": file_id}
 
 
-@app.post("/generate", response_model=GenerateResponse)
-async def generate(request: GenerateRequest) -> GenerateResponse:
-    try:
-        target = resolve_model(request.model)
-        logger.info(
-            "Routing request model_key=%s provider=%s concrete_model=%s",
-            request.model,
-            target.provider,
-            target.model,
-        )
-        normalized = await apim_client.generate(
-            provider=target.provider,
-            model=target.model,
-            prompt=request.input,
-            options=request.options,
-        )
-        return GenerateResponse(
-            provider=target.provider,
-            model=target.model,
-            output=normalized["output"],
-            raw=normalized["raw"],
-        )
-    except ModelMappingError as exc:
-        logger.warning("Invalid abstract model key: %s", request.model)
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except APIMClientError as exc:
-        logger.error("APIM request failed: %s", exc)
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
-    except Exception as exc:  # noqa: BLE001
-        logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail="Internal server error") from exc
-
-
-@app.post("/generate/auto", response_model=GenerateAutoResponse)
-async def generate_auto(request: GenerateAutoRequest) -> GenerateAutoResponse:
+@app.post("/generate", response_model=GenerateAutoResponse)
+async def generate(request: GenerateAutoRequest) -> GenerateAutoResponse:
     try:
         files = file_store.get_many(request.file_ids)
         file_kinds = [item.kind for item in files]
@@ -211,17 +187,24 @@ async def generate_auto(request: GenerateAutoRequest) -> GenerateAutoResponse:
                     files=files,
                     base_options=request.options,
                 )
+                started = perf_counter()
                 normalized = await apim_client.generate(
                     provider=target.provider,
                     model=target.model,
                     prompt=request.input,
                     options=merged_options,
                 )
+                latency_ms = (perf_counter() - started) * 1000.0
+                token_usage = _extract_token_usage(target.provider, normalized["raw"])
+                estimated_cost = _estimate_cost_usd(target.model, token_usage)
                 return GenerateAutoResponse(
                     provider=target.provider,
                     model=target.model,
                     output=normalized["output"],
                     raw=normalized["raw"],
+                    latency_ms=round(latency_ms, 2),
+                    token_usage=token_usage,
+                    estimated_cost_usd=estimated_cost,
                     route_mode=request.mode,
                     route_candidates=route_candidates,
                     used_file_ids=request.file_ids,
@@ -414,3 +397,68 @@ def _tool_text_block(item: ProcessedFile) -> str:
         f"{snippet}\n"
         "[End Extracted File]"
     )
+
+
+def _extract_token_usage(provider: str, raw: dict[str, Any]) -> dict[str, int]:
+    usage: dict[str, Any] = {}
+    if provider == "openai":
+        candidate = raw.get("usage", {})
+        usage = candidate if isinstance(candidate, dict) else {}
+        input_tokens = _to_int(usage.get("input_tokens")) or _to_int(usage.get("prompt_tokens"))
+        output_tokens = _to_int(usage.get("output_tokens")) or _to_int(usage.get("completion_tokens"))
+        total_tokens = _to_int(usage.get("total_tokens"))
+    elif provider == "claude":
+        candidate = raw.get("usage", {})
+        usage = candidate if isinstance(candidate, dict) else {}
+        input_tokens = _to_int(usage.get("input_tokens"))
+        output_tokens = _to_int(usage.get("output_tokens"))
+        total_tokens = _to_int(usage.get("total_tokens"))
+    elif provider == "gemini":
+        candidate = raw.get("usageMetadata", {})
+        usage = candidate if isinstance(candidate, dict) else {}
+        input_tokens = _to_int(usage.get("promptTokenCount"))
+        output_tokens = _to_int(usage.get("candidatesTokenCount"))
+        total_tokens = _to_int(usage.get("totalTokenCount"))
+    else:
+        input_tokens = None
+        output_tokens = None
+        total_tokens = None
+
+    if total_tokens is None and input_tokens is not None and output_tokens is not None:
+        total_tokens = input_tokens + output_tokens
+
+    payload: dict[str, int] = {}
+    if input_tokens is not None:
+        payload["input_tokens"] = input_tokens
+    if output_tokens is not None:
+        payload["output_tokens"] = output_tokens
+    if total_tokens is not None:
+        payload["total_tokens"] = total_tokens
+    return payload
+
+
+def _estimate_cost_usd(model: str, token_usage: dict[str, int]) -> float | None:
+    prices = MODEL_PRICING_USD_PER_MILLION.get(model)
+    if prices is None:
+        return None
+
+    input_tokens = token_usage.get("input_tokens")
+    output_tokens = token_usage.get("output_tokens")
+    if input_tokens is None and output_tokens is None:
+        return None
+
+    cost = 0.0
+    if input_tokens is not None:
+        cost += (input_tokens / 1_000_000.0) * prices["input"]
+    if output_tokens is not None:
+        cost += (output_tokens / 1_000_000.0) * prices["output"]
+    return round(cost, 6)
+
+
+def _to_int(value: Any) -> int | None:
+    try:
+        if value is None:
+            return None
+        return int(value)
+    except (TypeError, ValueError):
+        return None
