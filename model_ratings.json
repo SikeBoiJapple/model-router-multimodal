@@ -8,7 +8,7 @@
       "data_analysis": 9.0,
       "image": 7.6,
       "latency": 6.2,
-      "cost": 5.4
+      "cost": 6.1
     },
     "gpt-5.2": {
       "language": 9.0,
@@ -18,7 +18,7 @@
       "data_analysis": 9.2,
       "image": 8.4,
       "latency": 6.8,
-      "cost": 5.4
+      "cost": 6.1
     },
     "gpt-5-mini": {
       "language": 8.0,
@@ -28,7 +28,7 @@
       "data_analysis": 7.8,
       "image": 8.0,
       "latency": 9.0,
-      "cost": 9.3
+      "cost": 10.0
     },
     "claude-opus-4-6": {
       "language": 9.4,
@@ -48,7 +48,7 @@
       "data_analysis": 8.8,
       "image": 8.5,
       "latency": 7.3,
-      "cost": 4.0
+      "cost": 5.5
     },
     "claude-haiku-4-5": {
       "language": 8.3,
@@ -58,7 +58,7 @@
       "data_analysis": 7.5,
       "image": 8.2,
       "latency": 9.3,
-      "cost": 8.0
+      "cost": 8.9
     },
     "gemini-3.1-pro-preview": {
       "language": 9.0,
@@ -68,7 +68,7 @@
       "data_analysis": 9.1,
       "image": 9.6,
       "latency": 5.8,
-      "cost": 3.6
+      "cost": 6.6
     },
     "gemini-3-flash-preview": {
       "language": 8.1,
