@@ -5,38 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Model Router UI</title>
   <style>
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
     :root {
-      --bg: #f4f7fb;
+      --bg: #ffffff;
       --panel: #ffffff;
-      --text: #15202b;
-      --muted: #5b6773;
-      --line: #d2dbe6;
-      --accent: #1268f3;
-      --err: #c62828;
-      --ok: #1f7a3a;
+      --text: #111827;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --err: #b91c1c;
+      --ok: #15803d;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      background: radial-gradient(circle at top left, #eaf2ff 0%, #f5f9ff 35%, #eef4ff 100%);
-      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: var(--bg);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
       font-size: 14px;
-      padding: 18px;
+      line-height: 1.5;
+      padding: 24px;
     }
     .card {
       max-width: 1680px;
       margin: 0 auto;
       background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 14px;
-      box-shadow: 0 12px 30px rgba(18, 50, 94, 0.08);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: none;
     }
     .workspace {
       display: grid;
       grid-template-columns: minmax(280px, 0.9fr) minmax(0, 2.1fr);
-      gap: 12px;
+      gap: 24px;
       align-items: start;
     }
     .left-column,
@@ -45,15 +48,15 @@
     }
     .left-column {
       position: sticky;
-      top: 10px;
-      max-height: calc(100vh - 40px);
+      top: 16px;
+      max-height: calc(100vh - 32px);
       overflow: auto;
-      padding-right: 4px;
+      padding-right: 8px;
     }
     .right-column {
       display: grid;
-      gap: 10px;
-      padding-left: 10px;
+      gap: 16px;
+      padding-left: 24px;
       border-left: 1px solid var(--line);
     }
     .right-column .pane {
@@ -61,49 +64,72 @@
     }
     h1 { margin: 0; }
     .main-title {
-      margin: 2px 0 2px;
-      font-size: 2rem;
+      margin: 0;
+      font-size: 28px;
       line-height: 1.1;
-      color: #102a4a;
+      color: #111827;
+      font-weight: 600;
+      letter-spacing: -0.02em;
     }
-    .grid { display: grid; gap: 12px; }
+    .grid { display: grid; gap: 16px; }
     .composer {
       display: grid;
-      gap: 10px;
+      gap: 16px;
       margin-bottom: 0;
     }
     .form-section {
       border: 1px solid var(--line);
-      border-radius: 12px;
-      background: #fbfdff;
-      padding: 12px;
+      border-radius: 10px;
+      background: #fff;
+      padding: 16px;
     }
     .form-title {
-      margin: 0 0 4px;
-      font-size: 14px;
+      margin: 0 0 8px;
+      font-size: 11px;
       line-height: 1.25;
-      color: #18324e;
-      font-weight: 700;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
     .form-subtitle {
-      margin: 0 0 10px;
+      margin: 0 0 16px;
       color: var(--muted);
       font-size: 11px;
       line-height: 1.35;
     }
-    label { font-weight: 600; display: block; margin-bottom: 5px; font-size: 13px; }
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 8px;
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
     select, textarea, input[type="file"], button {
       width: 100%;
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 8px 10px;
+      padding: 8px 12px;
       font-size: 13px;
       background: #fff;
+      color: var(--text);
+      transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
     }
-    textarea { min-height: 120px; resize: vertical; }
+    select:hover, textarea:hover, input[type="file"]:hover, button:hover, .btn-inline:hover, .collapse-pane summary:hover {
+      border-color: #d1d5db;
+      background: #fafafa;
+    }
+    select:focus, textarea:focus, input[type="file"]:focus {
+      outline: none;
+      border-color: #cbd5e1;
+      box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.15);
+    }
+    textarea { min-height: 160px; resize: vertical; }
     button {
-      border: 0;
-      background: var(--accent);
+      border: 1px solid var(--text);
+      background: var(--text);
       color: #fff;
       font-weight: 600;
       cursor: pointer;
@@ -116,11 +142,10 @@
     .status-ok { color: var(--ok); }
     .status-err { color: var(--err); font-weight: 600; }
     .pane {
-      margin-top: 12px;
       border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 10px;
-      background: #fafcff;
+      border-radius: 10px;
+      padding: 0;
+      background: #fff;
     }
     .collapse-pane {
       padding: 0;
@@ -132,13 +157,13 @@
     .collapse-pane summary {
       list-style: none;
       cursor: pointer;
-      padding: 10px 12px;
-      font-size: 18px;
-      font-weight: 700;
+      padding: 16px;
+      font-size: 20px;
+      font-weight: 600;
       border-bottom: 1px solid var(--line);
       user-select: none;
-      background: #f8fbff;
-      letter-spacing: 0.02em;
+      background: #fff;
+      letter-spacing: -0.01em;
     }
     .collapse-pane summary::-webkit-details-marker {
       display: none;
@@ -147,7 +172,8 @@
       content: ">";
       display: inline-block;
       margin-right: 8px;
-      color: #3f5f86;
+      color: #94a3b8;
+      font-weight: 600;
     }
     .collapse-pane details[open] summary::before {
       content: "v";
@@ -155,9 +181,7 @@
     .collapse-pane details[open] summary {
       border-bottom: 1px solid var(--line);
     }
-    .collapse-body {
-      padding: 8px;
-    }
+    .collapse-body { padding: 16px; }
     .panel-scroll {
       overflow-y: auto;
       overscroll-behavior: contain;
@@ -175,11 +199,15 @@
       max-height: 360px;
       overflow: auto;
       font-size: 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fafafa;
+      padding: 12px;
     }
     .output-render {
       font-size: 14px;
-      line-height: 1.45;
-      color: #202a35;
+      line-height: 1.6;
+      color: #111827;
     }
     .output-render h1, .output-render h2, .output-render h3 {
       margin: 16px 0 8px;
@@ -192,79 +220,75 @@
       margin: 8px 0 12px 22px;
     }
     .output-render code {
-      background: #f2f6fc;
-      border: 1px solid #dbe4f1;
+      background: #f9fafb;
+      border: 1px solid var(--line);
       border-radius: 6px;
       padding: 1px 5px;
       font-size: 0.92em;
     }
     .output-render pre {
-      background: #f7faff;
-      border: 1px solid #dbe4f1;
+      background: #fafafa;
+      border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 10px;
+      padding: 12px;
       max-height: none;
       overflow: auto;
     }
     .response-metrics {
-      border: 1px solid #c9d7ea;
-      border-left: 4px solid #3f7de0;
+      border: 1px solid var(--line);
+      border-left: 2px solid #93c5fd;
       border-radius: 8px;
-      background: #f4f9ff;
-      padding: 6px 8px;
-      margin: 0 0 10px;
+      background: #fff;
+      padding: 12px;
+      margin: 0 0 16px;
       font-size: 12px;
-      line-height: 1.35;
+      line-height: 1.5;
     }
     .response-metrics .title {
       font-weight: 700;
       margin-bottom: 4px;
-      color: #1d3f78;
+      color: #1e3a8a;
     }
-    .response-metrics .line {
-      color: #21354d;
-    }
+    .response-metrics .line { color: #1f2937; }
     .routing-table th,
     .routing-table td {
       border-bottom: 1px solid var(--line);
-      padding: 6px 8px;
+      padding: 8px;
     }
     .routing-table th {
       position: sticky;
       top: 0;
-      background: #f7f9fc;
+      background: #fff;
       z-index: 1;
-      font-size: 12px;
+      font-size: 10px;
       text-transform: uppercase;
-      letter-spacing: 0.03em;
-      color: #425466;
+      letter-spacing: 0.08em;
+      color: var(--muted);
     }
-    .routing-table tbody tr:nth-child(even) { background: #fcfdff; }
-    .routing-table tbody tr:hover { background: #f3f8ff; }
+    .routing-table tbody tr:nth-child(even) { background: #fff; }
+    .routing-table tbody tr:hover { background: #f9fafb; }
     .col-model { text-align: left; }
     .col-num { text-align: center; }
     .col-final {
-      background: #f5f9ff;
+      background: #f9fafb;
       font-weight: 700;
-      border-left: 1px solid #c6d2e2;
-      border-right: 1px solid #c6d2e2;
+      border-left: 1px solid var(--line);
+      border-right: 1px solid var(--line);
     }
-    .col-qlc {
-      background: #fbfcf8;
-    }
+    .col-qlc { background: #fcfcfc; }
     .col-qlc-start {
-      border-left: 1px solid #c6d2e2;
+      border-left: 1px solid var(--line);
     }
     .col-qlc-end {
-      border-right: 1px solid #c6d2e2;
+      border-right: 1px solid var(--line);
     }
     .row-selected {
-      background: #eaf3ff !important;
-      box-shadow: inset 3px 0 0 #2a74ea;
+      background: #eff6ff !important;
+      box-shadow: inset 2px 0 0 #3b82f6;
     }
     .row-2 {
       display: grid;
-      gap: 10px;
+      gap: 16px;
       grid-template-columns: 1fr 1fr;
     }
     .row-3 {
@@ -274,13 +298,13 @@
     }
     .compare-row {
       display: grid;
-      gap: 10px;
+      gap: 16px;
       grid-template-columns: 1fr 1fr 1fr;
-      margin-top: 2px;
+      margin-top: 0;
     }
     .hidden { display: none !important; }
     .uploaded-list {
-      margin-top: 10px;
+      margin-top: 16px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #fff;
@@ -291,7 +315,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      padding: 7px 9px;
+      padding: 8px;
       border-bottom: 1px solid var(--line);
       font-size: 12px;
     }
@@ -326,25 +350,27 @@
     }
     .btn-inline {
       width: auto;
-      padding: 6px 8px;
+      padding: 8px 12px;
       border-radius: 8px;
-      font-size: 11px;
+      font-size: 12px;
       border: 1px solid var(--line);
       background: #fff;
       color: var(--text);
       cursor: pointer;
-      font-weight: 600;
+      font-weight: 500;
     }
     .compare-grid {
       display: grid;
-      gap: 10px;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      grid-template-columns: repeat(3, minmax(340px, 1fr));
+      overflow-x: auto;
+      padding-bottom: 8px;
     }
     .compare-card {
       border: 1px solid var(--line);
-      border-radius: 10px;
+      border-radius: 8px;
       background: #fff;
-      padding: 10px;
+      padding: 16px;
       min-height: 180px;
     }
     .compare-title {
@@ -357,9 +383,33 @@
       font-weight: 600;
       white-space: pre-wrap;
     }
+    .compare-routing {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: #fafafa;
+      margin: 0 0 12px;
+      font-size: 12px;
+      color: #374151;
+      line-height: 1.45;
+    }
+    .compare-routing .k {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .compare-routing .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 1px 0;
+    }
     .prompt-tools {
       display: grid;
-      gap: 6px;
+      gap: 8px;
       grid-template-columns: 1fr auto auto;
       align-items: center;
       margin-bottom: 8px;
@@ -371,7 +421,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      margin: 8px 0;
+      margin: 16px 0 8px;
       flex-wrap: wrap;
     }
     .prompt-actions .btn-inline {
@@ -385,12 +435,34 @@
     .send-wrap {
       display: grid;
       gap: 8px;
-      margin-top: 10px;
+      margin-top: 16px;
+    }
+    .subsection {
+      margin-top: 16px;
+    }
+    .subsection-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .query-radar-shell {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 12px;
+      height: 260px;
+    }
+    .query-radar-shell canvas {
+      width: 100% !important;
+      height: 100% !important;
     }
     .file-modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(18, 32, 51, 0.45);
+      background: rgba(17, 24, 39, 0.28);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -404,8 +476,8 @@
       border: 1px solid var(--line);
       border-radius: 12px;
       background: #fff;
-      padding: 12px;
-      box-shadow: 0 18px 40px rgba(10, 25, 46, 0.2);
+      padding: 16px;
+      box-shadow: 0 12px 28px rgba(17, 24, 39, 0.12);
     }
     .file-modal-header {
       display: flex;
@@ -423,11 +495,11 @@
       width: auto;
       border: 1px solid var(--line);
       background: #fff;
-      color: #21354d;
-      padding: 6px 10px;
+      color: #374151;
+      padding: 8px 12px;
       border-radius: 8px;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 500;
     }
     @media (max-width: 1100px) {
       .workspace {
@@ -452,7 +524,6 @@
       .row-2 { grid-template-columns: 1fr; }
       .row-3 { grid-template-columns: 1fr; }
       .compare-row { grid-template-columns: 1fr; }
-      .compare-grid { grid-template-columns: 1fr; }
       .prompt-tools { grid-template-columns: 1fr; }
     }
   </style>
@@ -470,6 +541,7 @@
                 <label for="mode">Routing Mode</label>
                 <select id="mode">
                   <option value="auto" selected>auto (scored routing)</option>
+                  <option value="compare-top3">compare (top 3)</option>
                   <option value="manual">manual model selection</option>
                   <option value="model-comparison">model comparison</option>
                 </select>
@@ -595,16 +667,19 @@
                 <div class="compare-card">
                   <h4 id="compare-title-1" class="compare-title">Model 1</h4>
                   <div id="compare-metrics-1"></div>
+                  <div id="compare-routing-1"></div>
                   <div id="compare-body-1" class="output-render"></div>
                 </div>
                 <div class="compare-card">
                   <h4 id="compare-title-2" class="compare-title">Model 2</h4>
                   <div id="compare-metrics-2"></div>
+                  <div id="compare-routing-2"></div>
                   <div id="compare-body-2" class="output-render"></div>
                 </div>
                 <div class="compare-card">
                   <h4 id="compare-title-3" class="compare-title">Model 3</h4>
                   <div id="compare-metrics-3"></div>
+                  <div id="compare-routing-3"></div>
                   <div id="compare-body-3" class="output-render"></div>
                 </div>
               </div>
@@ -617,9 +692,16 @@
             <div class="collapse-body">
               <div id="routing-summary" class="hint">No routing details yet.</div>
               <div id="query-requirement-metrics"></div>
-              <div id="query-requirements" class="output-render" style="margin-top:10px;"></div>
-              <div class="output-render" style="margin-top:10px;">
-                <h3>Model Benchmark Ranking</h3>
+              <div class="subsection">
+                <div class="subsection-label">Query Requirements</div>
+                <div id="query-requirements-heading" class="hint"></div>
+                <div id="query-requirements-list" class="output-render" style="margin-top:8px; margin-bottom:8px;"></div>
+                <div class="query-radar-shell">
+                  <canvas id="query-radar-chart"></canvas>
+                </div>
+              </div>
+              <div class="subsection">
+                <div class="subsection-label">Model Benchmark Ranking</div>
               </div>
               <div style="overflow:auto; margin-top:8px;">
                 <table id="routing-table" class="routing-table" style="width:100%; border-collapse: collapse; font-size: 12px;">
@@ -673,6 +755,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script>
     window.MathJax = {
       tex: {
@@ -732,12 +815,20 @@
       document.getElementById("compare-metrics-2"),
       document.getElementById("compare-metrics-3")
     ];
+    const compareRoutingEls = [
+      document.getElementById("compare-routing-1"),
+      document.getElementById("compare-routing-2"),
+      document.getElementById("compare-routing-3")
+    ];
     const routingSummaryEl = document.getElementById("routing-summary");
     const queryRequirementMetricsEl = document.getElementById("query-requirement-metrics");
     const routingTableBodyEl = document.getElementById("routing-table-body");
     const routingFormulaEl = document.getElementById("routing-formula");
-    const queryRequirementsEl = document.getElementById("query-requirements");
+    const queryRequirementsHeadingEl = document.getElementById("query-requirements-heading");
+    const queryRequirementsListEl = document.getElementById("query-requirements-list");
+    const queryRadarCanvasEl = document.getElementById("query-radar-chart");
     const rawEl = document.getElementById("raw");
+    let queryRadarChart = null;
     const uploadedFiles = [];
     const EXAMPLE_PROMPTS = [
       {
@@ -796,13 +887,14 @@
 
     function applyModeState() {
       const mode = modeEl.value;
-      const isAutoMode = mode === "auto";
+      const isAutoMode = mode === "auto" || mode === "compare-top3";
       const isManualMode = mode === "manual";
-      const isCompareMode = mode === "model-comparison";
+      const isCompareMode = mode === "model-comparison" || mode === "compare-top3";
+      const isManualCompareMode = mode === "model-comparison";
 
       autoControlsEl.classList.toggle("hidden", !isAutoMode);
       manualControlsEl.classList.toggle("hidden", !isManualMode);
-      compareRowEl.classList.toggle("hidden", !isCompareMode);
+      compareRowEl.classList.toggle("hidden", !isManualCompareMode);
 
       objectiveEl.disabled = !isAutoMode;
       queryEvaluatorModelEl.disabled = !isAutoMode;
@@ -957,13 +1049,14 @@
       for (let i = 0; i < 3; i++) {
         compareTitleEls[i].textContent = `Model ${i + 1}`;
         compareMetricsEls[i].innerHTML = "";
+        compareRoutingEls[i].innerHTML = "";
         compareBodyEls[i].innerHTML = "";
       }
       routingSummaryEl.textContent = "No routing details yet.";
       queryRequirementMetricsEl.innerHTML = "";
       routingTableBodyEl.innerHTML = "";
       routingFormulaEl.innerHTML = "";
-      queryRequirementsEl.innerHTML = "";
+      clearQueryRadar();
       rawEl.textContent = "";
       const mode = modeEl.value;
       const prompt = promptEl.value || "";
@@ -1034,6 +1127,97 @@
           return;
         }
 
+        if (mode === "compare-top3") {
+          setStatus("Routing top 3 candidates...");
+          const autoBody = {
+            input: prompt,
+            mode: "auto",
+            routing_objective: objectiveEl.value,
+            manual_model: null,
+            query_evaluator_model: queryEvaluatorModelEl.value,
+            file_ids: fileIds,
+            options: {}
+          };
+          const autoRes = await fetch("/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(autoBody)
+          });
+          const autoData = await autoRes.json();
+          if (!autoRes.ok) {
+            throw new Error(autoData?.error?.message || `HTTP ${autoRes.status}`);
+          }
+
+          const ranked = Array.isArray(autoData.routing_scores) ? autoData.routing_scores.slice(0, 3) : [];
+          if (ranked.length < 3) {
+            throw new Error("Top-3 comparison requires at least 3 ranked routing candidates.");
+          }
+          const topModels = ranked.map((row) => row.model_key);
+
+          compareOutputEl.classList.remove("hidden");
+          compareOutputEl.style.display = "grid";
+          await renderRoutingDetails(autoData, {
+            overlayTop3: true,
+            selectedModelKey: topModels[0],
+          });
+
+          const tasks = topModels.map(async (model) => {
+            const body = {
+              input: prompt,
+              mode: "manual",
+              routing_objective: objectiveEl.value,
+              manual_model: model,
+              query_evaluator_model: null,
+              file_ids: fileIds,
+              options: {}
+            };
+            const res = await fetch("/generate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              throw new Error(data?.error?.message || `HTTP ${res.status}`);
+            }
+            return { model, data };
+          });
+
+          const results = await Promise.allSettled(tasks);
+          let successCount = 0;
+          const rawResults = [];
+
+          for (let i = 0; i < results.length; i++) {
+            const result = results[i];
+            const requestedModel = topModels[i];
+            compareTitleEls[i].textContent = `#${i + 1} ${requestedModel}`;
+            renderCompareRoutingBreakdown(
+              compareRoutingEls[i],
+              ranked[i],
+              autoData.query_requirements || {},
+            );
+
+            if (result.status === "fulfilled") {
+              successCount += 1;
+              const payload = result.value.data;
+              renderResponseMetrics(compareMetricsEls[i], payload, `#${i + 1} ${requestedModel}`);
+              await renderRichText(compareBodyEls[i], payload.output || "_No output_", { autoFormat: true });
+              rawResults.push({ rank: i + 1, model: requestedModel, ok: true, response: payload });
+            } else {
+              compareMetricsEls[i].innerHTML = "";
+              compareBodyEls[i].innerHTML = `<div class="compare-error">${escapeHtml(result.reason?.message || "Request failed")}</div>`;
+              rawResults.push({ rank: i + 1, model: requestedModel, ok: false, error: result.reason?.message || "Request failed" });
+            }
+          }
+
+          setStatus(
+            `Top-3 comparison completed. ${successCount}/3 model(s) succeeded.`,
+            successCount === 3 ? "status-ok" : "status-err"
+          );
+          rawEl.textContent = JSON.stringify({ mode: "compare-top3", routing: autoData, results: rawResults }, null, 2);
+          return;
+        }
+
         setStatus("Routing and generating...");
         const body = {
           input: prompt,
@@ -1061,7 +1245,7 @@
         );
         renderResponseMetrics(outputMetricsEl, data);
         await renderOutput(data.output || "");
-        await renderRoutingDetails(data);
+        await renderRoutingDetails(data, { overlayTop3: false });
         rawEl.textContent = JSON.stringify(data, null, 2);
       } catch (err) {
         setStatus(err?.message || "Request failed", "status-err");
@@ -1336,6 +1520,146 @@
       `;
     }
 
+    function clearQueryRadar() {
+      if (queryRadarChart) {
+        queryRadarChart.destroy();
+        queryRadarChart = null;
+      }
+      if (queryRequirementsHeadingEl) {
+        queryRequirementsHeadingEl.textContent = "";
+      }
+      if (queryRequirementsListEl) {
+        queryRequirementsListEl.innerHTML = "";
+      }
+      if (queryRadarCanvasEl) {
+        const ctx = queryRadarCanvasEl.getContext("2d");
+        if (ctx) {
+          ctx.clearRect(0, 0, queryRadarCanvasEl.width, queryRadarCanvasEl.height);
+        }
+      }
+    }
+
+    function buildContributionVector(row, req) {
+      return [
+        Number(row?.ratings_used?.language || 0) * Number(req?.language || 0),
+        Number(row?.ratings_used?.reasoning || 0) * Number(req?.reasoning || 0),
+        Number(row?.ratings_used?.coding || 0) * Number(req?.coding || 0),
+        Number(row?.ratings_used?.mathematics || 0) * Number(req?.mathematics || 0),
+        Number(row?.ratings_used?.data_analysis || 0) * Number(req?.data_analysis || 0),
+      ];
+    }
+
+    function renderQueryRadar({ req, scorerModelName, scores, selectedModelKey, overlayTop3 = false }) {
+      if (!queryRadarCanvasEl || !window.Chart) return;
+      const labels = ["Language", "Reasoning", "Coding", "Mathematics", "Data Analysis"];
+      const selectedRow = scores.find((row) => row.model_key === selectedModelKey) || scores[0];
+      if (!selectedRow) {
+        clearQueryRadar();
+        return;
+      }
+
+      const palette = [
+        { line: "#2563eb", fill: "rgba(37, 99, 235, 0.30)" },
+        { line: "#7c3aed", fill: "rgba(124, 58, 237, 0.18)" },
+        { line: "#059669", fill: "rgba(5, 150, 105, 0.18)" },
+      ];
+
+      let datasets = [];
+      if (overlayTop3) {
+        const topRows = scores.slice(0, 3);
+        datasets = topRows.map((row, idx) => {
+          const isSelected = row.model_key === selectedModelKey;
+          const colors = palette[idx] || palette[0];
+          return {
+            label: `#${idx + 1} ${row.model_key}${isSelected ? " (selected)" : ""}`,
+            data: buildContributionVector(row, req),
+            fill: true,
+            borderColor: colors.line,
+            backgroundColor: colors.fill,
+            pointBackgroundColor: colors.line,
+            pointBorderColor: "#ffffff",
+            pointRadius: isSelected ? 3.2 : 2.4,
+            borderWidth: isSelected ? 2.4 : 1.4,
+          };
+        });
+      } else {
+        datasets = [
+          {
+            label: `Selected: ${selectedRow.model_key}`,
+            data: buildContributionVector(selectedRow, req),
+            fill: true,
+            borderColor: "#2563eb",
+            backgroundColor: "rgba(37, 99, 235, 0.22)",
+            pointBackgroundColor: "#2563eb",
+            pointBorderColor: "#ffffff",
+            pointRadius: 2.8,
+            borderWidth: 2,
+          }
+        ];
+      }
+
+      const maxValue = Math.max(
+        0.1,
+        ...datasets.flatMap((ds) => ds.data.map((v) => Number(v || 0)))
+      );
+      const scaleMax = Math.max(1, Math.ceil(maxValue * 1.2 * 2) / 2);
+
+      if (queryRequirementsHeadingEl) {
+        queryRequirementsHeadingEl.textContent = overlayTop3
+          ? `Per-dimension task_fit contributions (top 3) from ${scorerModelName}`
+          : `Per-dimension task_fit contributions for selected model from ${scorerModelName}`;
+      }
+      if (queryRadarChart) {
+        queryRadarChart.destroy();
+      }
+      const ctx = queryRadarCanvasEl.getContext("2d");
+      if (!ctx) return;
+      queryRadarChart = new Chart(ctx, {
+        type: "radar",
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: {
+              display: overlayTop3,
+              position: "bottom",
+              labels: {
+                boxWidth: 10,
+                boxHeight: 10,
+                color: "#475569",
+                font: { size: 11, family: "Inter, sans-serif" }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: (context) => `${context.dataset.label} | ${context.label}: ${Number(context.raw).toFixed(3)}`
+              }
+            }
+          },
+          scales: {
+            r: {
+              min: 0,
+              max: scaleMax,
+              ticks: {
+                stepSize: scaleMax <= 1 ? 0.2 : 0.5,
+                backdropColor: "transparent",
+                color: "#94a3b8",
+                font: { size: 10 }
+              },
+              angleLines: { color: "#e5e7eb" },
+              grid: { color: "#e5e7eb" },
+              pointLabels: {
+                color: "#6b7280",
+                font: { size: 11, family: "Inter, sans-serif" }
+              }
+            }
+          }
+        }
+      });
+    }
+
     function modelKeyFromResponse(data) {
       const routeCandidates = data.route_candidates || [];
       for (const key of routeCandidates) {
@@ -1355,7 +1679,36 @@
         .replaceAll("'", "&#39;");
     }
 
-    async function renderRoutingDetails(data) {
+    function renderCompareRoutingBreakdown(el, row, req) {
+      if (!el || !row) {
+        if (el) el.innerHTML = "";
+        return;
+      }
+      const cLanguage = Number(row?.ratings_used?.language || 0) * Number(req?.language || 0);
+      const cReasoning = Number(row?.ratings_used?.reasoning || 0) * Number(req?.reasoning || 0);
+      const cCoding = Number(row?.ratings_used?.coding || 0) * Number(req?.coding || 0);
+      const cMath = Number(row?.ratings_used?.mathematics || 0) * Number(req?.mathematics || 0);
+      const cData = Number(row?.ratings_used?.data_analysis || 0) * Number(req?.data_analysis || 0);
+      el.innerHTML = `
+        <div class="compare-routing">
+          <div class="k">Routing Scores</div>
+          <div class="row"><span>Final</span><strong>${fmtNum(row.final_score)}</strong></div>
+          <div class="row"><span>Quality</span><strong>${fmtNum(row.quality_score)}</strong></div>
+          <div class="row"><span>Latency</span><strong>${fmtNum(row.latency_score)}</strong></div>
+          <div class="row"><span>Cost</span><strong>${fmtNum(row.cost_score)}</strong></div>
+          <div class="k" style="margin-top:8px;">Task Fit Contributions</div>
+          <div class="row"><span>Language</span><strong>${fmtNum(cLanguage)}</strong></div>
+          <div class="row"><span>Reasoning</span><strong>${fmtNum(cReasoning)}</strong></div>
+          <div class="row"><span>Coding</span><strong>${fmtNum(cCoding)}</strong></div>
+          <div class="row"><span>Mathematics</span><strong>${fmtNum(cMath)}</strong></div>
+          <div class="row"><span>Data Analysis</span><strong>${fmtNum(cData)}</strong></div>
+        </div>
+      `;
+    }
+
+    async function renderRoutingDetails(data, options = {}) {
+      const overlayTop3 = Boolean(options.overlayTop3);
+      const selectedModelOverride = options.selectedModelKey;
       const scorerMetrics = data.query_requirement_metrics || {};
       const scorerModelName = scorerMetrics.model || "query-evaluator";
       if (Object.keys(scorerMetrics).length > 0) {
@@ -1374,7 +1727,7 @@
         return;
       }
 
-      const selectedModelKey = modelKeyFromResponse(data);
+      const selectedModelKey = selectedModelOverride || modelKeyFromResponse(data);
       routingSummaryEl.textContent = `Router Objective: ${data.routing_objective || "n/a"} | Selected: ${selectedModelKey}`;
 
       routingTableBodyEl.innerHTML = "";
@@ -1403,6 +1756,17 @@
       const req = data.query_requirements || {};
       const ratings = selected.ratings_used || {};
       const imageAlpha = data.image_alpha;
+
+      if (queryRequirementsListEl) {
+        queryRequirementsListEl.innerHTML =
+          `<ul>` +
+          `<li>language: <strong>${fmtNum(req.language)}</strong></li>` +
+          `<li>reasoning: <strong>${fmtNum(req.reasoning)}</strong></li>` +
+          `<li>coding: <strong>${fmtNum(req.coding)}</strong></li>` +
+          `<li>mathematics: <strong>${fmtNum(req.mathematics)}</strong></li>` +
+          `<li>data_analysis: <strong>${fmtNum(req.data_analysis)}</strong></li>` +
+          `</ul>`;
+      }
 
       const reqVector = [
         fmtNum(req.language),
@@ -1483,15 +1847,13 @@
         `final = ${fmtNum(selected.final_score)}\n` +
         "```";
       await renderRichText(routingFormulaEl, formulaText);
-
-      const queryText =
-        `### Query Requirements (from ${scorerModelName})\n` +
-        `- language: **${fmtNum(req.language)}**\n` +
-        `- reasoning: **${fmtNum(req.reasoning)}**\n` +
-        `- coding: **${fmtNum(req.coding)}**\n` +
-        `- mathematics: **${fmtNum(req.mathematics)}**\n` +
-        `- data_analysis: **${fmtNum(req.data_analysis)}**`;
-      await renderRichText(queryRequirementsEl, queryText);
+      renderQueryRadar({
+        req,
+        scorerModelName,
+        scores,
+        selectedModelKey,
+        overlayTop3,
+      });
     }
   </script>
 </body>
