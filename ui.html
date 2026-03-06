@@ -1118,9 +1118,58 @@
       await renderRichText(outputEl, text, { autoFormat: true });
     }
 
+    function isLikelyMathLine(line) {
+      const trimmed = line.trim();
+      if (!trimmed) return false;
+      if (/^\$\$[\s\S]*\$\$/.test(trimmed) || /^\$\$/.test(trimmed) || /\$\$/.test(trimmed)) {
+        return true;
+      }
+      if (/^\\\(|^\\\[|\\\)|\\\]/.test(trimmed)) {
+        return true;
+      }
+      if (/\\(frac|sqrt|sum|prod|int|lim|left|right|cdot|times|varphi|phi|mu|sigma|theta|infty|mathbb|mathrm|text|begin|end)\b/.test(trimmed)) {
+        return true;
+      }
+      if (/[\u2211\u220F\u221A\u221E\u2248\u2264\u2265\u03BC\u03C3\u03C6\u03C0]/.test(trimmed)) {
+        return true;
+      }
+      if (/^[A-Za-z][A-Za-z0-9_]*\s*=\s*.*[+\-*/^].*$/.test(trimmed) && !/[;{}]/.test(trimmed)) {
+        return true;
+      }
+      return false;
+    }
+
+    function hasStrongCodeSignal(line) {
+      const trimmed = line.trim();
+      if (!trimmed) return false;
+      if (/^(def|class|function|const|let|var|if|elif|else|for|while|try|except|catch|finally|return|import|from|package|public|private|protected|interface|enum)\b/.test(trimmed)) {
+        return true;
+      }
+      if (/^(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|WITH)\b/i.test(trimmed)) {
+        return true;
+      }
+      if (/^\s{4,}|\t/.test(line)) {
+        return true;
+      }
+      if (/^[{[]\s*["']?[A-Za-z0-9_-]+["']?\s*:/.test(trimmed)) {
+        return true;
+      }
+      if (/=>|::|->|==|!=|<=|>=/.test(trimmed)) {
+        return true;
+      }
+      if (/[;{}]/.test(trimmed) && !isLikelyMathLine(trimmed)) {
+        return true;
+      }
+      if (/^(<[^>]+>|[#][!/])/.test(trimmed)) {
+        return true;
+      }
+      return false;
+    }
+
     function isLikelyCodeLine(line) {
       const trimmed = line.trim();
       if (!trimmed) return false;
+      if (isLikelyMathLine(trimmed)) return false;
       if (/^(def|class|function|const|let|var|if|elif|else|for|while|try|except|catch|finally|return|import|from|package|public|private|protected|interface|enum)\b/.test(trimmed)) {
         return true;
       }
@@ -1130,7 +1179,10 @@
       if (/^(<[^>]+>|[#][!/]|[{[]|[}\]])/.test(trimmed)) {
         return true;
       }
-      if (/[{};]/.test(trimmed)) {
+      if (/^[{[]\s*["']?[A-Za-z0-9_-]+["']?\s*:/.test(trimmed)) {
+        return true;
+      }
+      if (/;/.test(trimmed)) {
         return true;
       }
       if (/=>/.test(trimmed) || /:=/.test(trimmed)) {
@@ -1173,7 +1225,8 @@
           j += 1;
         }
         const nonEmptyCount = block.filter(x => x.trim()).length;
-        if (nonEmptyCount >= 2) {
+        const hasStrongSignal = block.some(x => hasStrongCodeSignal(x));
+        if (nonEmptyCount >= 2 && hasStrongSignal) {
           out.push("```text");
           out.push(...block.map(x => x.replace(/^\s{4}/, "")));
           out.push("```");
@@ -1188,7 +1241,7 @@
     function autoWrapMathExpressions(text) {
       if (!text) return text;
       const segments = text.split(/(```[\s\S]*?```)/g);
-      const equationRegex = /([A-Za-z][A-Za-z0-9_]*(?:\([^\n()]*\))?\s*(?::=|=)\s*[A-Za-z0-9_μσφπ∞√+\-*/^()[\]{}\s]+)(?=[,.;]|$)/g;
+      const equationRegex = /([A-Za-z][A-Za-z0-9_]*(?:\([^\n()]*\))?\s*(?::=|=)\s*[A-Za-z0-9_\u03bc\u03c3\u03d5\u03c0\u221e\u221a+\-*/^()[\]{}\s]+)(?=[,.;]|$)/g;
       const symbolExprRegex = /\b(E\[[^\]\n]+\]|Var\([^\)\n]+\)|Cov\([^\)\n]+\)|P\([^\)\n]+\)|N\([^\)\n]+\)|[A-Za-z]+_[A-Za-z0-9]+|[A-Za-z0-9_]+\^[A-Za-z0-9_]+)\b/g;
 
       return segments.map((segment) => {
@@ -1443,5 +1496,3 @@
   </script>
 </body>
 </html>
-
-
